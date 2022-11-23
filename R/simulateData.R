@@ -17,17 +17,17 @@ simulateData <- function(n, lavModel, appendLVs = F) {
      colnames(Eps)[colnames(Eps) == ""] <- matrices$vnames$ov.iv
 
      # start off with "latent" variables
-     LV <- Zeta[, Order$lvov[Order$order == 1]]
+     LV <- Zeta[, Order$lvov[Order$order == 1], drop = F]
      for(ord in 2:max(Order$order))
      {
           # construct nonlinear effects and append
           if(unique(Order$type[Order$order == ord]) == "nl")
           {
-               tempOrder <- Order[Order==ord,]; NL <- c()
+               tempOrder <- Order[Order==ord,, drop = F]; NL <- c()
                for(i in 1:nrow(tempOrder))
                {
                     tempVarNames <- stringr::str_split(pattern = ":", tempOrder$lvov[i])[[1]]
-                    NL <- cbind(NL, as.matrix(apply(LV[, tempVarNames], 1, prod)))
+                    NL <- cbind(NL, as.matrix(apply(LV[, tempVarNames, drop = F], 1, prod)))
                }
                colnames(NL) <- tempOrder$lvov
                LV <- cbind(LV, NL)
@@ -35,7 +35,7 @@ simulateData <- function(n, lavModel, appendLVs = F) {
           # construct deoendent variable and append
           if(unique(Order$type[Order$order == ord]) == "dv")
           {
-               tempOrder <- Order[Order==ord,]
+               tempOrder <- Order[Order==ord,, drop = F]
 
                # catch only exisiting variables
                Zeta_temp <- Zeta[, tempOrder$lvov, drop = F]
@@ -48,12 +48,12 @@ simulateData <- function(n, lavModel, appendLVs = F) {
      }
 
      #  create manifest variables
-     Lambda_temp <- mat$Lambda[matrices$vnames$ov, ]
-     OV <- LV[, colnames(Lambda_temp)] %*% t(Lambda_temp) + Eps[, matrices$vnames$ov]
+     Lambda_temp <- mat$Lambda[matrices$vnames$ov, , drop = F]
+     OV <- LV[, colnames(Lambda_temp), drop = F] %*% t(Lambda_temp) + Eps[, matrices$vnames$ov, drop = F]
      OV <- as.data.frame(OV)
      if(appendLVs){
           LV <- as.data.frame(LV)
-          OV <- cbind(OV, LV[, !(names(LV) %in% names(OV))])
+          OV <- cbind(OV, LV[, !(names(LV) %in% names(OV)), drop = F])
      }
      return(OV)
 }

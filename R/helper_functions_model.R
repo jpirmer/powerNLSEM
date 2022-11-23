@@ -115,13 +115,26 @@ get_matrices <- function(lavModel, lavModel_attributes){
      # if(any(lavModel$LHSvarType == "obsEndo" & lavModel$op == "~")) stop("Manifest variables can only be measurements for now!\nUsing manifest variables as predictors or outcome\nneeds special considerations on the matrices Beta, Psi,\nLambda and Theta and on the equation by equation simulation!")
      if(any(lavModel$ustart[lavModel$op=="~1"] != 0)) stop("Changing the means of latent variables may influence the parameters\nand changes interpretation. This is not recommended.\nMeans for manifest variables should not influence powers,\nhence, this has not been implemented, yet!")
 
-     # ov variables ----
+     # ov and lv variables ----
      ov <- lavModel_attributes$vnames$ov[[1]]
      ov <- ov[!grepl(":", ov)]
      ov.nl <- lavModel_attributes$vnames$ov.interaction[[1]]
      ov.y <- lavModel_attributes$vnames$ov.y[[1]]
      lv <- lavModel_attributes$vnames$lv[[1]]
      lv <- lv[!grepl(":", lv)]
+     lv.x <- lavModel_attributes$vnames$lv.x[[1]]
+     lv.nox <- lavModel_attributes$vnames$lv.nox[[1]]
+     lv.y <- lavModel_attributes$vnames$lv.y[[1]]
+     lv.nl <- lavModel_attributes$vnames$lv.interaction[[1]]
+
+     eqs.x <- lavModel_attributes$vnames$eqs.x[[1]]
+     eqs.y <- lavModel_attributes$vnames$eqs.y[[1]]
+
+     vs <- unique(c(lv.x, lv.nox, lv.y, lv.nl, eqs.x, eqs.y))
+
+     lv.iv <- lv.x[!(lv.x %in% c(lv.nl, lv.nox, eqs.y))]
+     ov.iv <- ov[!(ov %in% lavModel$rhs[lavModel$op == "=~"] | ov %in% c(ov.y, eqs.y, ov.nl))]
+
 
      # Lambda ----
      if(length(lv) != 0)
@@ -197,38 +210,33 @@ get_matrices <- function(lavModel, lavModel_attributes){
      Psi <- Psi[!grepl(":", Psi_names),  !grepl(":", Psi_names)]
 
      # full Lambda for simulation ----
-     if(!is.null(Lambda))
+     if(length(ov.iv) > 0)
      {
-          Lambda_full <- rbind(Lambda, matrix(0, nrow = length(ov.iv), ncol = ncol(Lambda)))
-          Lambda_full <- cbind(Lambda_full, matrix(0, nrow = nrow(Lambda_full),
-                                                   ncol = sum(apply(Theta, 1, function(x) all(x==0))) + length(ov.iv)))
-          colnames(Lambda_full)[colnames(Lambda_full) == ""] <- c(colnames(Theta)[apply(Theta, 1, function(x) all(x==0))], ov.iv)
-          rownames(Lambda_full)[rownames(Lambda_full) == ""] <- ov.iv
+          if(!is.null(Lambda))
+          {
+               Lambda_full <- rbind(Lambda, matrix(0, nrow = length(ov.iv), ncol = ncol(Lambda)))
+               Lambda_full <- cbind(Lambda_full, matrix(0, nrow = nrow(Lambda_full),
+                                                        ncol = sum(apply(Theta, 1, function(x) all(x==0))) + length(ov.iv)))
+               colnames(Lambda_full)[colnames(Lambda_full) == ""] <- c(colnames(Theta)[apply(Theta, 1, function(x) all(x==0))], ov.iv)
+               rownames(Lambda_full)[rownames(Lambda_full) == ""] <- ov.iv
+          }else{
+               Lambda_full <- matrix(0, nrow = length(ov), ncol = length(ov))
+               rownames(Lambda_full) <- colnames(Lambda_full) <- ov
+          }
+          # fix loading of observed ivs on itself on 1
+          pos1 <- unlist(sapply(colnames(Lambda_full), function(x) which(x==rownames(Lambda_full))))
+          for(i in 1:length(pos1))
+          {
+               Lambda_full[pos1[i], names(pos1)[i]] <- 1
+          }
      }else{
-          Lambda_full <- matrix(0, nrow = length(ov), ncol = length(ov))
-          rownames(Lambda_full) <- colnames(Lambda_full) <- ov
+          Lambda_full <- Lambda
      }
 
-     pos1 <- unlist(sapply(colnames(Lambda_full), function(x) which(x==rownames(Lambda_full))))
-     for(i in 1:length(pos1))
-     {
-          Lambda_full[pos1[i], names(pos1)[i]] <- 1
-     }
+
+
 
      # compute order ----
-     lv.x <- lavModel_attributes$vnames$lv.x[[1]]
-     lv.nox <- lavModel_attributes$vnames$lv.nox[[1]]
-     lv.y <- lavModel_attributes$vnames$lv.y[[1]]
-     lv.nl <- lavModel_attributes$vnames$lv.interaction[[1]]
-
-     eqs.x <- lavModel_attributes$vnames$eqs.x[[1]]
-     eqs.y <- lavModel_attributes$vnames$eqs.y[[1]]
-
-     vs <- unique(c(lv.x, lv.nox, lv.y, lv.nl, eqs.x, eqs.y))
-
-     lv.iv <- lv.x[!(lv.x %in% lv.nl)]
-     ov.iv <- ov[!(ov %in% lavModel$rhs[lavModel$op == "=~"] | ov %in% c(ov.y, eqs.y))]
-
      IVs <- c(lv.iv, ov.iv)
 
      order <- rep(NA, length(vs)); type <- rep(NA, length(vs))
@@ -372,7 +380,7 @@ compute_highest_order <- function(Beta_dv, Order)
 
      Orders <- lapply(VarList_subs, FUN = function(l) sapply(stringr::str_split(string = l, pattern = ":"), function(x) length(x)))
      highestOrders <- lapply(Orders, max)
-     highestOrder <- max(unlist(highestOrder))
+     highestOrder <- max(unlist(highestOrders))
      highestOrder_terms <- unname(unlist(VarList_subs)[which(unlist(Orders) == highestOrder)])
 
      return(list("highestOrder" = highestOrder, "highestOrder_terms" = highestOrder_terms,
