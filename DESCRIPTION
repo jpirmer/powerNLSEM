@@ -1,6 +1,6 @@
 Package: powerNLSEM
 Type: Package
-Title: Power Analysis for nonlinear (quadratic and interaction) SEM
+Title: Power Analysis for nonlinear (quadratic and interaction) SEM/ moderated and mediated SEM
 Version: 0.0.1
 Author: Who wrote it
 Maintainer: Julien Patrick Irmer <yourself@somewhere.net>
@@ -9,5 +9,5 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Depends: stringr lavaan
-RoxygenNote: 7.2.0
+Depends: stringr, lavaan
+RoxygenNote: 7.2.1
