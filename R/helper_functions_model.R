@@ -282,11 +282,11 @@ get_matrices <- function(lavModel, lavModel_attributes){
           }
           if(nrow(temp_Beta_dv) != 0)
           {
-               new <- rownames(temp_Beta_dv)[apply(apply(temp_Beta_dv, 1, FUN = function(x) x != 0),
-                                                   2, FUN = function(y) all(colnames(temp_Beta_dv[,y]) %in% lvov))]
+               new <- rownames(temp_Beta_dv)[apply(temp_Beta_dv != 0,
+                                                   1, FUN = function(y) all(colnames(temp_Beta_dv[,y]) %in% lvov))]
                if(length(new) == 0){
                     concerningDV <- rownames(temp_Beta_dv)
-                    concerningIV <- colnames(temp_Beta_dv[, apply(X = t(apply(temp_Beta_dv, 1, FUN = function(x) x != 0)), 2, function(y) any(y))])
+                    concerningIV <- colnames(temp_Beta_dv[, apply(X = temp_Beta_dv != 0, 2, function(y) any(y))])
                     stop(paste0("Model is circular.\nPlease reconsider your model! You could start with these variable.\nIncludes dependent variables: ",
                                 paste(concerningDV, sep = "", collapse = ", "), ".\nIncludes independent variables: ",
                                 paste(concerningIV, sep = "", collapse = ", "), ".\n"))
@@ -314,8 +314,11 @@ get_matrices <- function(lavModel, lavModel_attributes){
                     "eqs.x" = lavModel_attributes$vnames$eqs.x[[1]],
                     "eqs.y" = lavModel_attributes$vnames$eqs.y[[1]])
 
+     HighestOrders <- compute_highest_order(Beta_dv = Beta_dv, Order = Order)
+
      return(list("Lambda" = Lambda_full, "Theta" = Theta, "Beta_dv" = Beta_dv, "Psi" = Psi,
-                 "vnames" = vnames, "Order" = Order, "Lambda_small" = Lambda))
+                 "vnames" = vnames, "Order" = Order, "HighestOrders" = HighestOrders,
+                 "Lambda_small" = Lambda))
 }
 
 
@@ -327,4 +330,51 @@ getModel <- function(lavModel)
                          FUN = function(string) paste(string, sep = "", collapse = " ")),
                          sep = "", collapse = "\n")
      return(analysisModel)
+}
+
+
+replace_variable <- function(var_to_replace, var_to_replace_dv, dv2)
+{
+     dv2_new <- unique(c(sapply(seq_along(var_to_replace_dv),
+                                function(replace_ind) stringr::str_replace_all(string = dv2,
+                                                                               pattern = var_to_replace,
+                                                                               replacement = var_to_replace_dv[replace_ind]))))
+     dv2_new_sorted <- unlist(lapply(lapply(stringr::str_split(dv2_new, pattern = ":"), sort),
+                                     function(varnames) paste(varnames, sep = "", collapse = ":")))
+     return(dv2_new_sorted) # if "var_to_replace" is not included, the unchanged string (sorted) is returned
+}
+
+
+
+compute_highest_order <- function(Beta_dv, Order)
+{
+     VarList <- apply(Beta_dv != 0, 1, function(y) colnames(Beta_dv)[y])
+     NL_List <- lapply(VarList, FUN = function(l){l[grepl(pattern = ":", x = l)]})
+     included_vars_NL <- lapply(NL_List, FUN = function(nls){unique(unlist(stringr::str_split(nls, ":")))})
+
+     VarList_subs <- list(sort(VarList[[1]]))
+     if(length(VarList)>1)
+     {
+          varnamesY <- names(VarList)
+          for(i in 2:length(VarList))
+          {
+               VarList_subs[[i]] <- VarList[[i]]
+               tempnames <- varnamesY[1:(i-1)]
+               for(tname in tempnames)
+               {
+                    VarList_subs[[i]] <- replace_variable(var_to_replace = tname,
+                                                          var_to_replace_dv = VarList_subs[names(VarList) == tname][[1]],
+                                                          dv2 = VarList_subs[[i]]) |> sort()
+               }
+          }
+          names(VarList_subs) <- names(VarList)
+     }
+
+     Orders <- lapply(VarList_subs, FUN = function(l) sapply(stringr::str_split(string = l, pattern = ":"), function(x) length(x)))
+     highestOrders <- lapply(Orders, max)
+     highestOrder <- max(unlist(highestOrder))
+     highestOrder_terms <- unname(unlist(VarList_subs)[which(unlist(Orders) == highestOrder)])
+
+     return(list("highestOrder" = highestOrder, "highestOrder_terms" = highestOrder_terms,
+                 "Orders" = Orders, "highestOrders" = highestOrders))
 }
