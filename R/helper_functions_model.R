@@ -47,6 +47,7 @@ add_varType <- function(lavModel)
 
      lavModel[lavModel$op == "==", c("LHSvarType", "RHSvarType")] <- "constraint"
 
+
      return(lavModel)
 }
 
@@ -99,6 +100,14 @@ check_model <- function(lavModel)
           }else{return(NA)}})
 
      if(all(is.na(problematic_inds_LHS)) & all(is.na(problematic_inds_RHS))){
+
+          # add fixes (first indicator for now)
+          LV <- names(lavModel_attributes$vnames$lv.marker[[1]])
+          OV <- lavModel_attributes$vnames$lv.marker[[1]]
+          LV <- LV[OV != ""]; OV <- OV[OV != ""]
+          lavModel$fixed <- F
+          lavModel$fixed[lavModel$lhs %in% LV & lavModel$op == "=~" & lavModel$rhs %in% OV] <- T
+
           return(lavModel)
      }else{
           stop(paste0("Functional of variables used several times.\nIncluding: ",
