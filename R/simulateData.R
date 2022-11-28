@@ -2,13 +2,17 @@
 #' @param n sample size
 #' @param lavModel lavModel object
 #' @param appendLVs logical whether latent variables should be observed. Default to FALSE. (For developmental purposes)
+#' @param lavModel_attributes attributes of the lavModel object. If NULL, this is computed from lavModel. Default to NULL.
+#' @param matrices computed matrices for simulation. If NULL, this is computed from lavModel and lavModel_attributes. Default to NULL.
 #' @export
 
-simulateData <- function(n, lavModel, appendLVs = F) {
+simulateData <- function(n, lavModel, appendLVs = F, lavModel_attributes = NULL, matrices = NULL, seed = NULL) {
+
+     if(!is.null(seed)) set.seed(seed)
 
      # construct observed variables
-     lavModel_attributes <- lavaan:::lav_partable_attributes(lavModel)
-     matrices <- get_matrices(lavModel, lavModel_attributes)
+     if(is.null(lavModel_attributes)) lavModel_attributes <- lavaan:::lav_partable_attributes(lavModel)
+     if(is.null(matrices)) matrices <- get_matrices(lavModel, lavModel_attributes)
      mat <- matrices[1:4]
      Order <- matrices$Order
      Zeta <- mvtnorm::rmvnorm(n = n, sigma = mat$Psi); colnames(Zeta) <- colnames(mat$Psi)
