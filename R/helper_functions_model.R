@@ -437,16 +437,10 @@ add_manifests_as_latent <- function(manifest_po, lavModel_Analysis)
 }
 
 
-# prepare data for manifest IVs/DVs and change lavModel if necessary
-# write data_transformations data.frame
+# add covariances among IVs for model estimation
 
-handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
+add_covariances_to_lavModel <- function(lavModel_Analysis)
 {
-
-     obs <- unique(lavModel$rhs[lavModel$RHSvarType == "obs"])
-     manifest_po <- obs[which(!(obs %in% unique(lavModel$rhs[lavModel$op == "=~"])))] # manifest predictor or outcome
-     lavModel_Analysis <- lavModel; data_transformations <- NULL
-
      # add covariances among iv
      lavModel_Analysis_attributes <- lavaan:::lav_partable_attributes(lavModel_Analysis)
      # ov and lv variables ----
@@ -468,8 +462,8 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
 
      IVs <- c(lv.iv, ov.iv)
      included_covs_iv <- lavModel_Analysis[lavModel_Analysis$rhs %in% IVs &
-                            lavModel_Analysis$lhs %in% IVs &
-                            lavModel_Analysis$lhs != lavModel_Analysis$rhs, c("lhs", "rhs"), drop = F]
+                                                lavModel_Analysis$lhs %in% IVs &
+                                                lavModel_Analysis$lhs != lavModel_Analysis$rhs, c("lhs", "rhs"), drop = F]
      if(length(IVs) >= 2)
      {
           temp <- c()
@@ -490,17 +484,29 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
           {
                m_temp <- paste(apply(temp, 1, function(x) paste(x, collapse = "~~0*")), collapse = "\n")
                temp_lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = m_temp, meanstructure = T,auto.var = T,
-                                                                  auto.cov.lv.x = T, auto.cov.y = T,
-                                                                  as.data.frame. = T))
+                                                                                   auto.cov.lv.x = T, auto.cov.y = T,
+                                                                                   as.data.frame. = T))
                temp_lavModel <- add_varType(temp_lavModel)
                temp_lavModel <- temp_lavModel[temp_lavModel$op == "~~" & temp_lavModel$rhs != temp_lavModel$lhs,, drop = F]
                temp_lavModel$row <- temp_lavModel$col <- temp_lavModel$plabel <- NA
                temp_lavModel$fixed <- F
                temp_lavModel$id <- (nrow(lavModel_Analysis)+1):(nrow(lavModel_Analysis)+nrow(temp_lavModel))
+               temp_lavModel$start <- temp_lavModel$ustart <- ""
                lavModel_Analysis <- rbind(lavModel_Analysis, temp_lavModel)
           }
      }
+     return(lavModel_Analysis)
+}
 
+# prepare data for manifest IVs/DVs and change lavModel if necessary
+# write data_transformations data.frame
+
+handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
+{
+
+     obs <- unique(lavModel$rhs[lavModel$RHSvarType == "obs"])
+     manifest_po <- obs[which(!(obs %in% unique(lavModel$rhs[lavModel$op == "=~"])))] # manifest predictor or outcome
+     lavModel_Analysis <- lavModel; data_transformations <- NULL
 
      if(length(manifest_po) > 0)
      {
@@ -515,7 +521,8 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                {
                     lavModel_Analysis <- add_manifests_as_latent(manifest_po = manifest_po_nl, lavModel_Analysis = lavModel_Analysis)
                }
-          }else{
+          }else if(tolower(treat_manifest_as_latent) == "ov"){
+               # treat ov as ov, as long as no interaction with lv
                inds_nl_man <- sapply(manifest_po, function(man) any(grepl(pattern = man,
                                                                           x = unique(lavModel_Analysis$rhs[grepl(pattern = ":",
                                                                                                                  x = lavModel_Analysis$rhs)]))))
@@ -541,10 +548,13 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                }
                NL_effects <- data.frame("NLs" = NLs, "ov" = manifest_po_nl[manifests_nl], "NL_type" = NL_type)
                manifest_as_lat <-  NL_effects$ov[!is.na(NL_effects$ov)  & NL_effects$NL_type != "ov:ov"]
+               # add ov:lv interactions into lavModel_Analysis object by treating ovs as lvs
                if(length(manifest_as_lat)>0)
                {
                     lavModel_Analysis <- add_manifests_as_latent(manifest_po = manifest_as_lat, lavModel_Analysis = lavModel_Analysis)
                }
+               # resume with ovs that do not have ov:lv interactions and treat them as ov
+               # generate transformation list
                manifest_po_nl <- manifest_po_nl[!(manifest_po_nl %in% manifest_as_lat)]
                if(length(manifest_po_nl) > 0)
                {
@@ -553,11 +563,31 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                     for(i in seq_along(OV_NL))
                     {
                          data_transformations <- rbind(data_transformations, c(paste(OV_NL[[i]], sep = "", collapse = "_"),
-                                                                               OV_NL[[i]][1], OV_NL[[i]][2]))
-                    }; data_transformations <- data.frame(data_transformations); names(data_transformations) <- c("newname", "V1", "V2")
+                                                                               OV_NL[[i]][1], OV_NL[[i]][2],
+                                                                               paste(OV_NL[[i]], sep = "", collapse = ":")))
+                    }; data_transformations <- data.frame(data_transformations); names(data_transformations) <- c("newname", "V1", "V2", "oldname")
                }
           }
      }
+
+     if(!is.null(data_transformations)){ # if is not null, lavModel_Analysis needs to be adapted
+          for(i in 1:nrow(data_transformations))
+          {
+               lavModel_Analysis$RHSvarType[lavModel_Analysis$rhs == data_transformations$oldname[i]] <- "obs"
+               lavModel_Analysis$LHSvarType[lavModel_Analysis$lhs == data_transformations$oldname[i]] <- "obs"
+               lavModel_Analysis$ustart[lavModel_Analysis$lhs == data_transformations$oldname[i] & lavModel_Analysis$op == "~1"] <-
+                    lavModel_Analysis$start[lavModel_Analysis$lhs == data_transformations$oldname[i] & lavModel_Analysis$op == "~1"] <- ""
+
+               lavModel_Analysis$rhs[lavModel_Analysis$rhs == data_transformations$oldname[i]] <- data_transformations$newname[i]
+               lavModel_Analysis$lhs[lavModel_Analysis$lhs == data_transformations$oldname[i]] <- data_transformations$newname[i]
+          }
+     }
+
+     # add covariances among IVs
+     lavModel_Analysis <- add_covariances_to_lavModel(lavModel_Analysis = lavModel_Analysis)
+
+     # fix mean structure
+     lavModel_Analysis[lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs",]$fixed <- T
 
      return(list("lavModel_Analysis" = lavModel_Analysis,
                  "data_transformations" = data_transformations))
