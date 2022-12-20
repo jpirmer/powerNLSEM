@@ -2,9 +2,9 @@
 est_power <- function(df, predictor_inds, criterion_inds, bootstrap, verbose, alpha, method = "logit")
 {
      # unique predictors for predicted values (if bootstrapping is used)
-     predictors_newdata <- data.frame(df[1:nrow(df), predictor_inds])
-     crit <- colnames(df[, criterion_inds])
-     pred <- colnames(df[, predictor_inds])
+     predictors_newdata <- data.frame(df[1:nrow(df), predictor_inds, drop = F])
+     crit <- colnames(df[, criterion_inds, drop = F])
+     pred <- colnames(df[, predictor_inds, drop = F])
      model_List <- sapply(crit, function(x) paste0(x, "~", paste(pred, collapse = "+", sep="")))
 
 
