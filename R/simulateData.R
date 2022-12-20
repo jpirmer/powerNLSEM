@@ -6,7 +6,7 @@
 #' @param matrices computed matrices for simulation. If NULL, this is computed from lavModel and lavModel_attributes. Default to NULL.
 #' @export
 
-simulateData <- function(n, lavModel, appendLVs = F, lavModel_attributes = NULL, matrices = NULL, seed = NULL) {
+simulateNLSEM <- function(n, lavModel, appendLVs = F, lavModel_attributes = NULL, matrices = NULL, seed = NULL) {
 
      if(!is.null(seed)) set.seed(seed)
 
