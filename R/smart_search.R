@@ -4,15 +4,10 @@ smart_search <- function(POI,
                          search_method,
                          N_start = nrow(lavModel)*10, type = "u",
                          Ntotal = 1000, steps = 10,
-                         power_aim = .8, alpha = .05, ...)
+                         power_aim = .8, alpha = .05, lb = nrow(lavModel),
+                         ...)
 {
      dotdotdot <- list(...)
-
-     if(!is.null(dotdotdot$lb)){
-          lb <- dotdotdot$lb
-     }else{
-          lb <- nrow(lavModel)
-     }
 
      Reps <- get_Reps(type = type, Ntotal = Ntotal, steps = steps)
      Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
