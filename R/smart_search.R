@@ -1,10 +1,15 @@
 
 smart_search <- function(POI,
                          method, lavModel,
+                         lavModel_Analysis,
+                         data_transformations,
                          search_method,
                          N_start = nrow(lavModel)*10, type = "u",
                          Ntotal = 1000, steps = 10,
-                         power_aim = .8, alpha = .05, lb = nrow(lavModel),
+                         power_aim = .8, alpha = .05,
+                         lb = nrow(lavModel),
+                         switchStep = round(steps/2),
+                         CORES, verbose = T,
                          ...)
 {
      dotdotdot <- list(...)
@@ -15,58 +20,32 @@ smart_search <- function(POI,
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
      Nfinal <- c(); Nnew <- N_start; df <- c()
      Nl <- max(N_start / 2, lb); Nu <- N_start/2+N_start
-     cat(paste0("Initiating smart search to find simulation based N for power of ", power_aim, " within ", steps, " steps\nand in total ", Ntotal, " replications...\n"))
+     if(verbose) cat(paste0("Initiating smart search to find simulation based N for power of ",
+                            power_aim, " within ", steps, " steps\nand in total ",
+                            Ntotal, " replications. Ns are drawn randomly...\n"))
      for(i in 1:nrow(Conditions))
      {
-          cat(paste0("Step ", i, " of ", steps, ".\n"))
 
           # sample sample sizes
           Ns <- sample(seq(Nl, Nu, 1), size = Conditions$Reps[i], replace = T,
                        prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
           Ns <- sort(Ns, decreasing = T)
+          if(verbose) cat(paste0("Step ", i, " of ", steps, ". Fitting ", length(Ns),
+                                 " models with Ns in [", Nl, ", ", Nu,"].\n"))
 
           # simulate data,  fit models and evaluate significance of parameters of interest
           lavModel_attributes <- lavaan::lav_partable_attributes(lavModel)
-          Manifests <- handle_manifests(lavModel = lavModel, treat_manifest_as_latent = "ov")
-          lavModel_Analysis <- Manifests$lavModel_Analysis; data_transformations <- Manifests$data_transformations
           matrices <- get_matrices(lavModel, lavModel_attributes)
 
-          sim_and_fit <- function(n, POI, method,
-                                  alpha,
-                                  lavModel, lavModel_Analysis,
-                                  lavModel_attributes, matrices, data_transformations,
-                                  prefix,
-                                  ...){
-               data <- simulateNLSEM(n = n, lavModel = lavModel,
-                                     lavModel_attributes = lavModel_attributes,
-                                     matrices = matrices)
-               if(tolower(method) == "lms")
-               {
-                    fit <- try(LMS(lavModel_Analysis = lavModel_Analysis, data = data,
-                                   data_transformations = data_transformations, prefix = prefix), silent = T)
-               }
-               if(!inherits(fit, "try-error"))
-               {
-                    fit <- fit[fit$matchLabel %in% POI,,drop = F]
-                    out <- try(abs(fit$est/fit$se), silent = T)
-                    if(!inherits(out, "try-error"))
-                    {
-                         out <- out > qnorm(p = 1-alpha/2)
-                    }else{
-                         out <- rep(NA, length(POI))
-                    }
-                    names(out) <- POI
-               }else{
-                    out <- rep(NA, length(POI))
-               }
-               return(out)
-          }
-
-          cl <- parallel::makeCluster(10)
+          cl <- parallel::makeCluster(CORES)
           parallel::clusterExport(cl = cl, varlist = ls(), envir = environment())
+          parallel::clusterEvalQ(cl = cl, expr = {
+               library(powerNLSEM)
+          })
           Fitted <- pbapply::pbsapply(cl = cl,
                                       X = seq_along(Ns), FUN = function(ni) sim_and_fit(n = Ns[ni], POI = POI, alpha = alpha,
                                                                                         lavModel = lavModel,
+                                                                                        method = method,
                                                                                         lavModel_Analysis = lavModel_Analysis,
                                                                                         lavModel_attributes = lavModel_attributes,
                                                                                         matrices = matrices,

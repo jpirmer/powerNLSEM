@@ -4,7 +4,39 @@
 \alias{powerNLSEM}
 \title{powerNLSEM function}
 \usage{
-powerNLSEM()
+powerNLSEM(
+  model,
+  POI,
+  method,
+  search_method,
+  Ntotal = 2000,
+  power_aim = 0.8,
+  alpha = 0.05,
+  CORES = max(c(parallel::detectCores() - 2, 1)),
+  verbose = T,
+  ...
+)
+}
+\arguments{
+\item{model}{Model in lavaan syntax. See documentation for help and examples.}
+
+\item{POI}{Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.}
+
+\item{method}{Method used to fit to the data. Can be LMS or UPI.}
+
+\item{search_method}{String stating the search method. "smart" or "bruteforce".}
+
+\item{Ntotal}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
+
+\item{power_aim}{Minimal power value to approximate. Default to .8.}
+
+\item{alpha}{Type I-error rate. Default to .05.}
+
+\item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
+
+\item{verbose}{Logical whether progress should be printed in console. Default to TRUE.}
+
+\item{...}{Additional arguments passed on to the search functions.}
 }
 \description{
 powerNLSEM function

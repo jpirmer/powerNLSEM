@@ -12,6 +12,8 @@ power_search(
   Ntotal = 1000,
   power_aim = 0.8,
   alpha = 0.05,
+  CORES,
+  verbose,
   ...
 )
 }
@@ -29,6 +31,10 @@ power_search(
 \item{power_aim}{Minimal power value to approximate. Default to .8.}
 
 \item{alpha}{Type I-error rate. Default to .05.}
+
+\item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
+
+\item{verbose}{Logical whether progress should be printed in console. Default to TRUE.}
 
 \item{...}{Additional arguments passed on to the search functions.}
 }
