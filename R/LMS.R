@@ -7,7 +7,9 @@
 #' @export
 
 
-LMS <- function(lavModel_Analysis, data, data_transformations = NULL, prefix = 1, algorithm = "INTEGRATION")
+LMS <- function(lavModel_Analysis, data,
+                data_transformations = NULL,
+                prefix = 1, algorithm = "INTEGRATION")
 {
      if(!dir.exists("temp")) dir.create("temp/")
 
@@ -191,8 +193,6 @@ MODEL:
      param[header == "Intercepts" | header == "Means"] <- "~1"
      Parameters$matchLabel <- toupper(paste0(Label, param))
      Parameters$matchLabel <- stringr::str_replace_all(string = Parameters$matchLabel, pattern = "_", replacement = ":")
-
-     lavModel_Analysis_LMS$matchLabel <- toupper(paste0(lavModel_Analysis_LMS$lhs, lavModel_Analysis_LMS$op, lavModel_Analysis_LMS$rhs))
 
      lavModel_Analysis_LMS <- merge(x = lavModel_Analysis_LMS, y = Parameters, by = "matchLabel")
      lavModel_Analysis_LMS <- lavModel_Analysis_LMS[order(lavModel_Analysis_LMS$id),]
