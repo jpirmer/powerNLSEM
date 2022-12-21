@@ -254,9 +254,6 @@ get_matrices <- function(lavModel, lavModel_attributes){
           Lambda_full <- Lambda
      }
 
-
-
-
      # compute order ----
      IVs <- c(lv.iv, ov.iv)
 
