@@ -37,11 +37,12 @@ smart_search <- function(POI,
           lavModel_attributes <- lavaan::lav_partable_attributes(lavModel)
           matrices <- get_matrices(lavModel, lavModel_attributes)
 
-          cl <- parallel::makeCluster(CORES)
+          if(CORES > 1L){
+               cl <- parallel::makeCluster(CORES)
           parallel::clusterExport(cl = cl, varlist = ls(), envir = environment())
           parallel::clusterEvalQ(cl = cl, expr = {
-               library(powerNLSEM)
-          })
+               library(powerNLSEM)})
+          }else{cl <- NULL}
           Fitted <- pbapply::pbsapply(cl = cl,
                                       X = seq_along(Ns), FUN = function(ni) sim_and_fit(n = Ns[ni], POI = POI, alpha = alpha,
                                                                                         lavModel = lavModel,
@@ -52,7 +53,7 @@ smart_search <- function(POI,
                                                                                         data_transformations = data_transformations,
                                                                                         prefix = ni),
                                       simplify = T) |> t()
-          parallel::stopCluster(cl)
+          if(CORES > 1L) parallel::stopCluster(cl)
 
           Sigs <- data.frame(Fitted, Ns); names(Sigs) <- c(colnames(Fitted), "Ns")
 
