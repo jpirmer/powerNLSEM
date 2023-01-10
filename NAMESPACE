@@ -2,6 +2,7 @@
 
 S3method(plot,powerNLSEM)
 export(LMS)
+export(SR)
 export(UPI)
 export(powerNLSEM)
 export(power_search)
