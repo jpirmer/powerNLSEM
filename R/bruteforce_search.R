@@ -3,6 +3,7 @@ bruteforce_search <- function(POI,
                               method, lavModel,
                               lavModel_Analysis,
                               data_transformations,
+                              power_modeling_method,
                               N_start = nrow(lavModel_Analysis)*10,
                               Ntotal = 1000,
                               power_aim = .8, alpha = .05,
@@ -10,6 +11,7 @@ bruteforce_search <- function(POI,
                               CORES,
                               verbose = T,
                               Ns = NULL,
+                              uncertainty_method = "",
                               ...)
 {
      dotdotdot <- list(...)
@@ -62,13 +64,11 @@ bruteforce_search <- function(POI,
 
      ind_min <- which.min(colMeans(Sigs, na.rm = T))# find POI of lowest power
 
-     if(length(table(df$Ns)) > 1)
-     {
-          fit <- glm(df[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = "logit"), data = df)
-          Nnew_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = power_aim, alpha = alpha)$par)
-     }else{
-          Nnew_temp <- unique(df$Ns)
-     }
+     ### run power model
+     args <- names(formals(fit_power_model))
+     args <- args[args!="..."]
+     N_temp <- do.call("fit_power_model", mget(args))
+     Nnew_temp <- N_temp$Nnew_temp
 
      # return ----
      out <- list("N" = Nnew_temp, SigDecisions = df,

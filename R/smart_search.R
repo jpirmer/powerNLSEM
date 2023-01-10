@@ -4,12 +4,14 @@ smart_search <- function(POI,
                          lavModel_Analysis,
                          data_transformations,
                          search_method,
+                         power_modeling_method,
                          N_start = nrow(lavModel)*10, type = "u",
                          Ntotal = 1000, steps = 10,
                          power_aim = .8, alpha = .05,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
                          CORES, verbose = T,
+                         uncertainty_method = "",
                          ...)
 {
      dotdotdot <- list(...)
@@ -60,19 +62,13 @@ smart_search <- function(POI,
           df <- rbind(df, Sigs); rm(Ns)
 
           ind_min <- which.min(colMeans(Sigs, na.rm = T))# find POI of lowest power
-          fit <- glm(df[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = "logit"), data = df)
 
-          Nnew_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = power_aim, alpha = alpha)$par)
-          if(i <= switchStep)
-          {
-               Nl_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .15, alpha = 1)$par)
-               Nu_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .85, alpha = alpha)$par)
-          }else{
-               Nl_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
-                                       pow = max(power_aim - Conditions$Power_interval[i], .0001), alpha = 1)$par)
-               Nu_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
-                                       pow = min(power_aim + Conditions$Power_interval[i], .9999), alpha = alpha)$par)
-          }
+
+          ### run power model
+          args <- names(formals(fit_power_model))
+          args <- args[args!="..."]
+          N_temp <- do.call("fit_power_model", mget(args))
+          Nnew_temp <- N_temp$Nnew_temp; Nl_temp <- N_temp$Nl_temp; Nu_temp <- N_temp$Nu_temp;
 
           if(i == (switchStep+1)) # reset process after switch
           {
@@ -142,6 +138,42 @@ find_n_from_glm <- function(n, fit, pow = .8, alpha = .05, uncertainty_method = 
      power <- exp(logit_lb)/(1+exp(logit_lb))
      log((power - pow)^2) # use log, otherwise might not minimize
 }
+
+# fit power model
+fit_power_model <- function(power_modeling_method, df, ind_min,
+                            power_aim, alpha, i = NULL, switchStep = NULL,
+                            Conditions, uncertainty_method = "") {
+     if(length(table(df$Ns)) > 1)
+     {
+          if(tolower(power_modeling_method) == "logit")
+          {
+               fit <- glm(df[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = "logit"), data = df)
+          }else{
+               stop("This power modeling method has not been implemented.")
+          }
+          Nnew_temp <- round(nlminb(start = 0, objective = find_n_from_glm,
+                                    fit = fit, pow = power_aim, alpha = alpha,
+                                    uncertainty_method = uncertainty_method)$par)
+          if(i <= switchStep)
+          {
+               Nl_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .15, alpha = 1)$par)
+               Nu_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .85,
+                                       alpha = alpha, uncertainty_method = uncertainty_method)$par)
+          }else{
+               Nl_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
+                                       pow = max(power_aim - Conditions$Power_interval[i], .0001), alpha = 1)$par)
+               Nu_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
+                                       pow = min(power_aim + Conditions$Power_interval[i], .9999), alpha = alpha,
+                                       uncertainty_method = uncertainty_method)$par)
+          }
+     }else{
+          Nnew_temp <- Nl_temp <- Nu_temp <-  unique(df$Ns)
+     }
+
+  N_temp_out <- list("Nnew_temp" = Nnew_temp, "Nl_temp" = Nl_temp, "Nu_temp" = Nu_temp)
+  return(N_temp_out)
+}
+
 
 # evaluate resonablity of N
 evaluate_N <- function(N_temp, N, Sigs, ind_min, fit, lb, rel_tol = .5)
