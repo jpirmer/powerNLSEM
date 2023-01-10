@@ -27,7 +27,8 @@ power_search <- function(POI,
                          type = "u",
                          steps = 10,
                          lb = nrow(lavModel),
-                         switchStep = round(steps/2))
+                         switchStep = round(steps/2),
+                         uncertainty_method = "")
 {
      if(tolower(search_method %in% c("smart", "smart_search")))
      {

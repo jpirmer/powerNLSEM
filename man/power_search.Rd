@@ -8,13 +8,20 @@ power_search(
   POI,
   method,
   lavModel,
+  lavModel_Analysis,
+  data_transformations,
   search_method,
   Ntotal = 1000,
   power_aim = 0.8,
   alpha = 0.05,
   CORES,
   verbose,
-  ...
+  Ns = NULL,
+  N_start = nrow(lavModel) * 10,
+  type = "u",
+  steps = 10,
+  lb = nrow(lavModel),
+  switchStep = round(steps/2)
 )
 }
 \arguments{
