@@ -584,10 +584,13 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
      lavModel_Analysis <- add_covariances_to_lavModel(lavModel_Analysis = lavModel_Analysis)
 
      # fix mean structure
-     lavModel_Analysis[lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs",]$fixed <- T
+     if(sum(lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs")>0L)
+     {
+          lavModel_Analysis[lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs",]$fixed <- T
+     }
 
      return(list("lavModel_Analysis" = lavModel_Analysis,
-                 "data_transformations" = data_transformations))
+                 "data_transformations" = data_transformations[!duplicated(data_transformations),,drop = F]))
 }
 
 
