@@ -8,6 +8,7 @@ powerNLSEM(
   model,
   POI,
   method,
+  modeling_method = "logit",
   search_method,
   Ntotal = 2000,
   power_aim = 0.8,
@@ -23,6 +24,8 @@ powerNLSEM(
 \item{POI}{Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.}
 
 \item{method}{Method used to fit to the data. Can be LMS or UPI.}
+
+\item{modeling_method}{Method used to model significant parameter estimates. Default to "logit" indicating glm with logit link function with sqrt(n).}
 
 \item{search_method}{String stating the search method. "smart" or "bruteforce".}
 

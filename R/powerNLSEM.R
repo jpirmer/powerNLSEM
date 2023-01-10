@@ -2,6 +2,7 @@
 #' @param model Model in lavaan syntax. See documentation for help and examples.
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
 #' @param method Method used to fit to the data. Can be LMS or UPI.
+#' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to "logit" indicating glm with logit link function with sqrt(n).
 #' @param search_method String stating the search method. "smart" or "bruteforce".
 #' @param Ntotal Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
 #' @param power_aim Minimal power value to approximate. Default to .8.
@@ -12,7 +13,7 @@
 #' @export
 
 powerNLSEM <- function(model, POI,
-                       method,
+                       method, power_modeling_method = "logit",
                        search_method,
                        Ntotal = 2000,
                        power_aim = .8,
@@ -23,14 +24,18 @@ powerNLSEM <- function(model, POI,
 {
 
      ### prepare model ----
-     lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = model, meanstructure = T,auto.var = T,
+     lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = model,
+                                                                    meanstructure = T,auto.var = T,
                                                                     auto.cov.lv.x = T, auto.cov.y = T,
                                                                     as.data.frame. = T))
      lavModel <- add_varType(lavModel)
      lavModel <- check_model(lavModel)
      Manifests <- handle_manifests(lavModel = lavModel, treat_manifest_as_latent = "ov")
-     lavModel_Analysis <- Manifests$lavModel_Analysis; data_transformations <- Manifests$data_transformations
-     lavModel_Analysis$matchLabel <- toupper(paste0(lavModel_Analysis$lhs, lavModel_Analysis$op, lavModel_Analysis$rhs))
+     lavModel_Analysis <- Manifests$lavModel_Analysis
+     data_transformations <- Manifests$data_transformations
+     lavModel_Analysis$matchLabel <- toupper(paste0(lavModel_Analysis$lhs,
+                                                    lavModel_Analysis$op,
+                                                    lavModel_Analysis$rhs))
 
      ### initialize ----
      dotdotdot <- list(...)
@@ -67,6 +72,12 @@ powerNLSEM <- function(model, POI,
      }else{
           type <- "u"
      }
+     if(!is.null(dotdotdot$uncertainty_method)){
+          uncertainty_method <- dotdotdot$uncertainty_method
+     }else{
+          uncertainty_method <- ""
+     }
+
      POI <- stringr::str_replace_all(string = POI, pattern = " ", replacement = "")
 
 
@@ -76,13 +87,20 @@ powerNLSEM <- function(model, POI,
 
      if(!all(POI %in% lavModel_Analysis$matchLabel)){
           POI_missing <- POI[(!POI %in% lavModel_Analysis$matchLabel)]
-          stop(paste0("Parameters Of Interest (POI) not given in model. Includes: ", paste(POI_missing, collapse = ", ", sep = ""), "!"))
+          stop(paste0("Parameters Of Interest (POI) not given in model. Includes: ",
+                      paste(POI_missing, collapse = ", ", sep = ""), "!"))
      }
 
      ### run power analysis ----
      out <- do.call("power_search", mget(args))
 
+
      ### return results ----
+     out$power <- power_aim
+     out$beta <- 1-power_aim
+     out$alpha <- alpha
+     out$search_method <- search_method
+     out$modeling_method <- modeling_method
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }
