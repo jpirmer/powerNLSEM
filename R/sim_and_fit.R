@@ -12,6 +12,9 @@ sim_and_fit <- function(n, POI, method,
      {
           fit <- try(LMS(lavModel_Analysis = lavModel_Analysis, data = data,
                          data_transformations = data_transformations, prefix = prefix), silent = T)
+     }else if(tolower(method) %in% c("path", "regression", "scaleregression", "sr", "reg")){
+          fit <- try(SR(lavModel_Analysis = lavModel_Analysis, data = data,
+                        data_transformations = data_transformations), silent = T)
      }
      if(!inherits(fit, "try-error"))
      {
