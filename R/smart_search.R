@@ -63,31 +63,13 @@ smart_search <- function(POI,
 
           ind_min <- which.min(colMeans(Sigs, na.rm = T))# find POI of lowest power
 
-
           ### run power model
           args <- names(formals(fit_power_model))
           args <- args[args!="..."]
           N_temp <- do.call("fit_power_model", mget(args))
-          Nnew_temp <- N_temp$Nnew_temp; Nl_temp <- N_temp$Nl_temp; Nu_temp <- N_temp$Nu_temp;
+          Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
 
-          if(i == (switchStep+1)) # reset process after switch
-          {
-               Nl <- Nnew - 1; Nu <- Nnew + 1
-          }
 
-          # new iteration of Ns
-          Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew, Sigs = Sigs,
-                             ind_min = ind_min, fit = fit, lb = lb,
-                             rel_tol = Conditions$Rel_tol[i])
-          Nl <- evaluate_N(N_temp = Nl_temp, N = Nl, Sigs = Sigs,
-                           ind_min = ind_min, fit = fit, lb = lb,
-                           rel_tol = Conditions$Rel_tol[i])
-          Nu <- evaluate_N(N_temp = Nu_temp, N = Nu, Sigs = Sigs,
-                           ind_min = ind_min, fit = fit, lb = lb,
-                           rel_tol = Conditions$Rel_tol[i])
-          if(Nu <= Nl){
-               Nl <- round(Nu/2)
-          }
           Nfinal <- c(Nfinal, Nnew)
      }
 
@@ -140,7 +122,8 @@ find_n_from_glm <- function(n, fit, pow = .8, alpha = .05, uncertainty_method = 
 }
 
 # fit power model
-fit_power_model <- function(power_modeling_method, df, ind_min,
+fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
+                            power_modeling_method, df, ind_min,
                             power_aim, alpha, i = NULL, switchStep = NULL,
                             Conditions, uncertainty_method = "") {
      if(length(table(df$Ns)) > 1)
@@ -151,27 +134,46 @@ fit_power_model <- function(power_modeling_method, df, ind_min,
           }else{
                stop("This power modeling method has not been implemented.")
           }
-          Nnew_temp <- round(nlminb(start = 0, objective = find_n_from_glm,
+          Nnew_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm,
                                     fit = fit, pow = power_aim, alpha = alpha,
-                                    uncertainty_method = uncertainty_method)$par)
+                                    uncertainty_method = uncertainty_method)$par))
           if(i <= switchStep)
           {
-               Nl_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .15, alpha = 1)$par)
-               Nu_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .85,
-                                       alpha = alpha, uncertainty_method = uncertainty_method)$par)
+               Nl_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .15, alpha = 1)$par))
+               Nu_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .85,
+                                       alpha = alpha, uncertainty_method = uncertainty_method)$par))
           }else{
-               Nl_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
-                                       pow = max(power_aim - Conditions$Power_interval[i], .0001), alpha = 1)$par)
-               Nu_temp <- round(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
+               Nl_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
+                                       pow = max(power_aim - Conditions$Power_interval[i], .0001), alpha = 1)$par))
+               Nu_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
                                        pow = min(power_aim + Conditions$Power_interval[i], .9999), alpha = alpha,
-                                       uncertainty_method = uncertainty_method)$par)
+                                       uncertainty_method = uncertainty_method)$par))
           }
      }else{
           Nnew_temp <- Nl_temp <- Nu_temp <-  unique(df$Ns)
      }
 
-  N_temp_out <- list("Nnew_temp" = Nnew_temp, "Nl_temp" = Nl_temp, "Nu_temp" = Nu_temp)
-  return(N_temp_out)
+     if(i == (switchStep+1)) # reset process after switch
+     {
+          Nl <- Nnew - 1; Nu <- Nnew + 1
+     }
+
+     # new iteration of Ns
+     Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew, Sigs = Sigs,
+                        ind_min = ind_min, fit = fit, lb = lb,
+                        rel_tol = Conditions$Rel_tol[i])
+     Nl <- evaluate_N(N_temp = Nl_temp, N = Nl, Sigs = Sigs,
+                      ind_min = ind_min, fit = fit, lb = lb,
+                      rel_tol = Conditions$Rel_tol[i])
+     Nu <- evaluate_N(N_temp = Nu_temp, N = Nu, Sigs = Sigs,
+                      ind_min = ind_min, fit = fit, lb = lb,
+                      rel_tol = Conditions$Rel_tol[i])
+     if(Nu <= Nl){
+          Nl <- round(Nu/2)
+     }
+
+  N_out <- list("Nnew" = Nnew, "Nl" = Nl, "Nu_temp" = Nu)
+  return(N_out)
 }
 
 
