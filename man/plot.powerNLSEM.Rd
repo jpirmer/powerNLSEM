@@ -4,12 +4,30 @@
 \alias{plot.powerNLSEM}
 \title{plot powerNLSEM object}
 \usage{
-\method{plot}{powerNLSEM}(out, min_num_bins = 10)
+\method{plot}{powerNLSEM}(
+  out,
+  min_num_bins = 10,
+  plot = "power_model",
+  power_modeling_method = NULL,
+  se = F,
+  alpha = NULL
+)
 }
 \arguments{
 \item{out}{object of class powerNLSEM}
 
 \item{min_num_bins}{minimal number of bins used for aggregating results. Default to 10.}
+
+\item{plot}{Character indicating what type of plot to create. Default to "power_model", referencing to the prediction of significant parameters using the model specified in power_modeling_method.}
+
+\item{power_modeling_method}{Character indicating the power modeling method used. This is only relevant when plot = "power_model" is used. Default to NULL, indicating to use the same power modeling method as was used in the powerNLSEM function.}
+
+\item{se}{Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to FALSE.}
+
+\item{alpha}{Alpha value used for confidence intervals, when se = TRUE. Default to NULL, indicating to use the same alpha as was used in the powerNLSEM function.}
+}
+\value{
+Returns ggplot object of the type specified in plot.
 }
 \description{
 plot powerNLSEM object
