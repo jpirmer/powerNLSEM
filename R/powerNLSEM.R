@@ -13,7 +13,8 @@
 #' @export
 
 powerNLSEM <- function(model, POI,
-                       method, power_modeling_method = "logit",
+                       method,
+                       power_modeling_method = "logit",
                        search_method,
                        Ntotal = 2000,
                        power_aim = .8,
@@ -100,7 +101,7 @@ powerNLSEM <- function(model, POI,
      out$beta <- 1-power_aim
      out$alpha <- alpha
      out$search_method <- search_method
-     out$modeling_method <- modeling_method
+     out$power_modeling_method <- power_modeling_method
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }
