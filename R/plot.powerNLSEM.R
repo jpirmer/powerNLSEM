@@ -54,8 +54,8 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                                                                      grepl(pattern = "lb_", names(df_pred))) & names(df_pred) != "Ns"],
                                        timevar = "Effect")
                     gg <- ggplot(df_long, aes(x = Ns, y = Power, col = Effect, fill = Effect))+
-                         geom_hline(yintercept = out$power)+ylab("Predicted Power")+xlab("N")+
-                         geom_vline(xintercept = out$N)+
+                         geom_hline(yintercept = out$power, lwd = .2, lty = 3)+ylab("Predicted Power")+xlab("N")+
+                         geom_vline(xintercept = out$N, lwd = .2, lty = 3)+
                          geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
                          geom_line(lwd=1)+theme_minimal(base_size = 18)+
                          ggtitle("Model implied power with confidence bands")
@@ -70,8 +70,8 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                                        direction = "long", v.names = c("Power"),
                                        times = names(df_pred)[names(df_pred) != "Ns"], timevar = "Effect")
                     gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
-                         geom_hline(yintercept = out$power)+ylab("Predicted Power")+xlab("N")+
-                         geom_vline(xintercept = out$N)+theme_minimal(base_size = 18)+
+                         geom_hline(yintercept = out$power, lwd = .2, lty = 3)+ylab("Predicted Power")+xlab("N")+
+                         geom_vline(xintercept = out$N, lwd = .2, lty = 3)+theme_minimal(base_size = 18)+
                          geom_line(lwd = 1)+ggtitle("Model implied power")
 
                }
@@ -113,8 +113,8 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                              times = names(SUMMARY_agg)[names(SUMMARY_agg) != "Ns"], timevar = "Effect")
           gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+geom_point(cex = .1)+
                geom_smooth(method = "loess", formula = "y~x")+
-               geom_hline(yintercept = out$power)+
-               geom_vline(xintercept = out$N)+theme_minimal(base_size = 18)
+               geom_hline(yintercept = out$power, lwd = .2, lty = 3)+
+               geom_vline(xintercept = out$N, lwd = .2, lty = 3)+theme_minimal(base_size = 18)
      }
 
      return(gg)
