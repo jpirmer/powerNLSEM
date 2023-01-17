@@ -2,13 +2,14 @@
 #' @param model Model in lavaan syntax. See documentation for help and examples.
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
 #' @param method Method used to fit to the data. Can be LMS or UPI.
-#' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to "logit" indicating glm with logit link function with sqrt(n).
-#' @param search_method String stating the search method. "smart" or "bruteforce".
+#' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"logit"} indicating glm with logit link function with sqrt(n).
+#' @param search_method String stating the search method. Can be \code{"smart"} or \code{"bruteforce"}.
 #' @param Ntotal Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
 #' @param power_aim Minimal power value to approximate. Default to .8.
 #' @param alpha Type I-error rate. Default to .05.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
 #' @param verbose Logical whether progress should be printed in console. Default to TRUE.
+#' @param seed Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.
 #' @param ... Additional arguments passed on to the search functions.
 #' @export
 
@@ -20,9 +21,12 @@ powerNLSEM <- function(model, POI,
                        power_aim = .8,
                        alpha = .05,
                        CORES = max(c(parallel::detectCores()-2, 1)),
-                       verbose = T,
+                       verbose = T, seed = NULL,
                        ...)
 {
+     if(is.null(seed)) seed <- sample(1:10^9, size = 1)
+     set.seed(seed)
+     t0 <- proc.time()
 
      ### prepare model ----
      lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = model,
@@ -97,11 +101,14 @@ powerNLSEM <- function(model, POI,
 
 
      ### return results ----
+     t <- proc.time()-t0
      out$power <- power_aim
      out$beta <- 1-power_aim
      out$alpha <- alpha
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
+     out$runtime <- t
+     out$seed <- seed
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }

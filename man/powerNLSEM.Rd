@@ -15,6 +15,7 @@ powerNLSEM(
   alpha = 0.05,
   CORES = max(c(parallel::detectCores() - 2, 1)),
   verbose = T,
+  seed = NULL,
   ...
 )
 }
@@ -25,9 +26,9 @@ powerNLSEM(
 
 \item{method}{Method used to fit to the data. Can be LMS or UPI.}
 
-\item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to "logit" indicating glm with logit link function with sqrt(n).}
+\item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"logit"} indicating glm with logit link function with sqrt(n).}
 
-\item{search_method}{String stating the search method. "smart" or "bruteforce".}
+\item{search_method}{String stating the search method. Can be \code{"smart"} or \code{"bruteforce"}.}
 
 \item{Ntotal}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
 
@@ -38,6 +39,8 @@ powerNLSEM(
 \item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
 
 \item{verbose}{Logical whether progress should be printed in console. Default to TRUE.}
+
+\item{seed}{Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.}
 
 \item{...}{Additional arguments passed on to the search functions.}
 }
