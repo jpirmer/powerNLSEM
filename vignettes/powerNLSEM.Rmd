@@ -88,7 +88,7 @@ States the structural model of the NLSEM as $Y=.3X + .2Z + .2XZ + \varepsilon_Y$
 
 After stating the model, we can use the `powerNLSEM` function to use a smart search algorithm to find the optimal sample size for our desired power for a given type I-error rate. For computational reasons we will use the scale regression approach to examplify the use of the function with a very small number of replications: 
 
-```{r, results = "hide"}
+```{r, results = "hide", warning=FALSE,error=F,message=F}
 Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method = "sr",
                            search_method = "smart", steps = 10, power_modeling_method = "logit",
                            Ntotal = 2000, power_aim = .8, alpha = .05, CORES = 1, verbose = T,
@@ -120,7 +120,7 @@ Step 10 of 10. Fitting 333 models with Ns in [232, 295].
   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s ")
 ```
 
-The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"sr"`, which indicates that the latent variables should be collapsed to means (this is a very loose approximation of the latent variable, which can be arbitrarily wrong and is used for demonstration purposes here [[CHECK THIS!!!!!! WRITE MORE]]), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"logit"`, which means the significance decisions per parameter are modeled via a logistic regression model (see Schoemann, et al., 2014).  `Ntotal` is the total number of models fitted (here 2000 is rather small, this number should be increased for higher precision). `power_aim` is the desired power level (here 0.8), `alpha` is the corresponding type I-error rate (level of significance, here 0.05), `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console. used  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
+The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"sr"`, which indicates that the latent variables should be collapsed to means (this is a very loose approximation of the latent variable, which can be arbitrarily wrong and is used for demonstration purposes here **[[CHECK THIS!!!!!! WRITE MORE]]**), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"logit"`, which means the significance decisions per parameter are modeled via a logistic regression model (see Schoemann, et al., 2014).  `Ntotal` is the total number of models fitted (here 2000 is rather small, this number should be increased for higher precision). `power_aim` is the desired power level (here 0.8), `alpha` is the corresponding type I-error rate (level of significance, here 0.05), `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console. used  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
 
 The output object `Result_Power` is a list with the following objects:
 
@@ -167,20 +167,20 @@ include information on the search algorithm (here smart search, could also be "b
 
 The `powerNLSEM` package offers several plots, which visualize the power:
 
-```{r}
+```{r, fig.width=7, fig.height=5, fig.align='center'}
 plot(Result_Power)
 ```
 
 plots the model implied power for the `POI` vs. sample size `N`. The vertical line indicates the necessary sample size found be the smart search algorithm. The horizontal line indicates the desired power level.
 
  
-```{r}
+```{r, fig.width=7, fig.height=5, fig.align='center'}
 plot(Result_Power, se = T)
 ```
 
 Within this plot the standard errors of the `power_modeling_method` are included into the plot.
 
-```{r}
+```{r, fig.width=7, fig.height=5, fig.align='center'}
 plot(Result_Power, se = T, plot = "empirical")
 ```
 
