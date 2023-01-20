@@ -531,10 +531,10 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                     NLs_split_list <- stringr::str_split(NLs, pattern = ":")
                     LVs <- unique(lavModel_Analysis$lhs[lavModel_Analysis$op == "=~"])
 
-                    manifests_nl <- lapply(NLs_split_list, FUN = function(nls) nls[1] %in% manifest_po_nl | nls[2] %in% manifest_po_nl) |> unlist()
+                    # manifests_nl <- lapply(NLs_split_list, FUN = function(nls) nls[1] %in% manifest_po_nl | nls[2] %in% manifest_po_nl) |> unlist()
 
                     manifests_nl <- lapply(NLs_split_list, FUN = function(nls)if(any(manifest_po_nl %in% nls)){
-                         return(which(manifest_po_nl %in% nls))}else{return(NA)}) |> unlist()
+                         return(which(manifest_po_nl %in% nls))}else{return(NA)}) |> unlist() |> unique()
 
                     latent_nl <- lapply(NLs_split_list, FUN = function(nls) nls[1] %in% LVs | nls[2] %in% LVs) |> unlist()
                     NL_type <- rep("lv:lv", length(NLs))
