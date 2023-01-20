@@ -61,7 +61,7 @@ smart_search <- function(POI,
 
           df <- rbind(df, Sigs); rm(Ns)
 
-          ind_min <- which.min(colMeans(Sigs, na.rm = T))# find POI of lowest power
+          ind_min <- which.min(colMeans(df, na.rm = T))# find POI of lowest power
 
           ### run power model
           args <- names(formals(fit_power_model))
@@ -109,16 +109,20 @@ get_Reps <- function(type = "u", Ntotal = 1000, steps = 10) {
 }
 
 # find n from an glm-fit model
-find_n_from_glm <- function(n, fit, pow = .8, alpha = .05, uncertainty_method = "")
+find_n_from_glm <- function(fit, pow = .8, alpha = .05, uncertainty_method = "", Nmax = 10^4)
 {
+     N_sequence <- 1:Nmax
      if(uncertainty_method == "exact")
      {
           alpha <- 1 # no influence on se
      }
-     logit_fit <- predict(object = fit, newdata = data.frame("Ns" = n), se.fit = T)
+     logit_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = T)
      logit_lb <- logit_fit$fit - qnorm(p = 1-alpha/2)*logit_fit$se.fit
      power <- exp(logit_lb)/(1+exp(logit_lb))
-     log((power - pow)^2) # use log, otherwise might not minimize
+     minN <- suppressWarnings(min(N_sequence[power>pow]))
+     if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
+                                          uncertainty_method =  uncertainty_method, Nmax = 10^6)
+     return(minN)
 }
 
 # fit power model
@@ -134,20 +138,17 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
           }else{
                stop("This power modeling method has not been implemented.")
           }
-          Nnew_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm,
-                                    fit = fit, pow = power_aim, alpha = alpha,
-                                    uncertainty_method = uncertainty_method)$par))
+          Nnew_temp <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
+                                       uncertainty_method =  uncertainty_method)
           if(i <= switchStep)
           {
-               Nl_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .15, alpha = 1)$par))
-               Nu_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit, pow = .85,
-                                       alpha = alpha, uncertainty_method = uncertainty_method)$par))
+               Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha = 1, uncertainty_method =  uncertainty_method)
+               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha = alpha, uncertainty_method =  uncertainty_method)
           }else{
-               Nl_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
-                                       pow = max(power_aim - Conditions$Power_interval[i], .0001), alpha = 1)$par))
-               Nu_temp <- round(suppressWarnings(nlminb(start = 0, objective = find_n_from_glm, fit = fit,
-                                       pow = min(power_aim + Conditions$Power_interval[i], .9999), alpha = alpha,
-                                       uncertainty_method = uncertainty_method)$par))
+               Nl_temp <- find_n_from_glm(fit = fit, pow = max(power_aim - Conditions$Power_interval[i], .0001),
+                                          alpha = 1, uncertainty_method =  uncertainty_method)
+               Nu_temp <- find_n_from_glm(fit = fit, pow = min(power_aim + Conditions$Power_interval[i], .9999),
+                                          alpha = alpha, uncertainty_method = uncertainty_method)
           }
      }else{
           fit <- NULL
