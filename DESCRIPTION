@@ -4,12 +4,12 @@ Title: Power Analysis for nonlinear (quadratic and interaction) SEM/ moderated a
 Version: 0.0.1
 Author: Who wrote it
 Maintainer: Julien Patrick Irmer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Simulation based power analysis for nonlinear (and linear) SEM, path analysis and regression analysis. A theoretical framework is used to approximate the relation between power and sample size for given type I error rates and effect size.
+    The package offers a smart search algorithm to find the optimal N for given effect sizes type I error rates. Plots can be used to visualize the power relation to N for different parameters of interst (POI).
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: stringr, lavaan
+Depends: stringr, lavaan, MplusAutomation, dplyr, ggplot2
 RoxygenNote: 7.2.1
 Suggests: 
     knitr,
