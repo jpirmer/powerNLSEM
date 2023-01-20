@@ -70,7 +70,7 @@ bruteforce_search <- function(POI,
 
      df <- rbind(df, Sigs); rm(Ns)
 
-     ind_min <- which.min(colMeans(Sigs, na.rm = T))# find POI of lowest power
+     ind_min <- which.min(colMeans(df, na.rm = T))# find POI of lowest power
 
      ### run power model
      args <- names(formals(fit_power_model))
