@@ -138,7 +138,7 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
           }else{
                stop("This power modeling method has not been implemented.")
           }
-          Nnew_temp <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
+          Nnew_temp <- find_n_from_glm(fit = fit, pow = power_aim, alpha = alpha,
                                        uncertainty_method =  uncertainty_method)
           if(i <= switchStep)
           {
