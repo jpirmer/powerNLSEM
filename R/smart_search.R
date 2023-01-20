@@ -150,6 +150,7 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
                                        uncertainty_method = uncertainty_method)$par))
           }
      }else{
+          fit <- NULL
           Nnew_temp <- Nl_temp <- Nu_temp <-  unique(df$Ns)
      }
 
@@ -159,15 +160,21 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
      }
 
      # new iteration of Ns
-     Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew, Sigs = Sigs,
-                        ind_min = ind_min, fit = fit, lb = lb,
-                        rel_tol = Conditions$Rel_tol[i])
-     Nl <- evaluate_N(N_temp = Nl_temp, N = Nl, Sigs = Sigs,
-                      ind_min = ind_min, fit = fit, lb = lb,
-                      rel_tol = Conditions$Rel_tol[i])
-     Nu <- evaluate_N(N_temp = Nu_temp, N = Nu, Sigs = Sigs,
-                      ind_min = ind_min, fit = fit, lb = lb,
-                      rel_tol = Conditions$Rel_tol[i])
+     if(!is.null(fit))
+     {
+          Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew, Sigs = Sigs,
+                             ind_min = ind_min, fit = fit, lb = lb,
+                             rel_tol = Conditions$Rel_tol[i])
+          Nl <- evaluate_N(N_temp = Nl_temp, N = Nl, Sigs = Sigs,
+                           ind_min = ind_min, fit = fit, lb = lb,
+                           rel_tol = Conditions$Rel_tol[i])
+          Nu <- evaluate_N(N_temp = Nu_temp, N = Nu, Sigs = Sigs,
+                           ind_min = ind_min, fit = fit, lb = lb,
+                           rel_tol = Conditions$Rel_tol[i])
+     }else{
+          Nnew <- Nnew_temp; Nl <- Nl_temp; Nu <- Nu_temp
+     }
+
      if(Nu <= Nl){
           Nl <- round(Nu/2)
      }
