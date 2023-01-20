@@ -14,6 +14,13 @@ bruteforce_search <- function(POI,
                               uncertainty_method = "",
                               ...)
 {
+     i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
+     Reps <- get_Reps(type = type, Ntotal = Ntotal, steps = steps)
+     # Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
+     # Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
+     Rel_tol <- 2
+     Power_interval <- .1
+     Conditions <- data.frame(Reps, Power_interval, Rel_tol)
      dotdotdot <- list(...)
      if(is.null(Ns)){
           Nl <- max(N_start/4, lb); Nu <- N_start*3
@@ -22,11 +29,12 @@ bruteforce_search <- function(POI,
      }else{
           if(length(table(Ns))==1)
           {
+               N_start <- Ns; Nnew <- Ns
                Ns <- rep(Ns, Ntotal)
           }else{
                Ns <- sample(x = Ns, size = Ntotal, replace = T)
           }
-     }; Nl <- min(Ns); Nu <- max(Ns)
+     }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns))
 
      if(verbose) cat(paste0("Initiating brute force search to find simulation based N for power of ",
                             power_aim, " within ",
