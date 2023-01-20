@@ -27,7 +27,8 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
           {
                if(se)
                {
-                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(glm(Sigs[,i]~I(Ns), data = Sigs,
+                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))),
+                                                                          glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                               family = binomial(link = "logit")),
                                                                           se.fit = T), simplify = F)
                     Logit <- c(); Logit_UB <- c(); Logit_LB <- c()
@@ -40,18 +41,22 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                     powers <- exp(Logit)/(1 + exp(Logit))
                     powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
                     powers_LB <- exp(Logit_LB)/(1 + exp(Logit_LB))
-                    df_pred <- cbind(powers, powers_UB, powers_LB, Sigs$Ns) |> data.frame()
-                    names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"], paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
-                                        paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]), "Ns")
+                    df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))) |> data.frame()
+                    names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
+                                        paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
+                                        paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]),
+                                        "Ns")
                     df_pred <- df_pred[order(df_pred$Ns),]
-                    df_long <- reshape(df_pred, varying = list(names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
-                                                                                     grepl(pattern = "lb_", names(df_pred))) &
-                                                                                   (names(df_pred) != "Ns")],
-                                                               names(df_pred)[grepl(pattern = "ub_", names(df_pred))],
-                                                               names(df_pred)[grepl(pattern = "lb_", names(df_pred))]),
+                    df_long <- reshape(df_pred,
+                                       varying = list(names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
+                                                                        grepl(pattern = "lb_", names(df_pred))) &
+                                                                        (names(df_pred) != "Ns")],
+                                                     names(df_pred)[grepl(pattern = "ub_", names(df_pred))],
+                                                     names(df_pred)[grepl(pattern = "lb_", names(df_pred))]),
                                        direction = "long", v.names = c("Power", "Power_ub", "Power_lb"),
                                        times = names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
-                                                                     grepl(pattern = "lb_", names(df_pred))) & names(df_pred) != "Ns"],
+                                                                grepl(pattern = "lb_", names(df_pred)))
+                                                               & names(df_pred) != "Ns"],
                                        timevar = "Effect")
                     gg <- ggplot(df_long, aes(x = Ns, y = Power, col = Effect, fill = Effect))+
                          geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
@@ -61,10 +66,11 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                          ggtitle("Model implied power with confidence bands")
 
                }else{
-                    Logit <- sapply(1:(ncol(Sigs)-1), function(i) predict(glm(Sigs[,i]~I(Ns), data = Sigs,
+                    Logit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))),
+                                                                          glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                               family = binomial(link = "logit"))))
                     powers <- exp(Logit)/(1 + exp(Logit))
-                    df_pred <- cbind(powers, Sigs$Ns) |> data.frame(); names(df_pred) <- names(Sigs)
+                    df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))) |> data.frame(); names(df_pred) <- names(Sigs)
                     df_pred <- df_pred[order(df_pred$Ns),]
                     df_long <- reshape(df_pred, varying = list(names(df_pred)[names(df_pred) != "Ns"]),
                                        direction = "long", v.names = c("Power"),
