@@ -88,39 +88,39 @@ States the structural model of the NLSEM as $Y=.3X + .2Z + .2XZ + \varepsilon_Y$
 
 After stating the model, we can use the `powerNLSEM` function to use a smart search algorithm to find the optimal sample size for our desired power for a given type I-error rate. For computational reasons we will use the scale regression approach to examplify the use of the function with a very small number of replications: 
 
-```{r, results = "hide", warning=FALSE,error=F,message=F}
+```{r, warning=FALSE,error=FALSE}
 Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method = "sr",
                            search_method = "smart", steps = 10, power_modeling_method = "logit",
-                           Ntotal = 2000, power_aim = .8, alpha = .05, CORES = 1, verbose = T,
+                           Ntotal = 200, power_aim = .8, alpha = .05, CORES = 1, verbose = T,
                            seed = 2023)
 ```
 
-```{r, echo = F}
-cat("Initiating smart search to find simulation based N for power of 0.8 within 10 steps
-and in total 2000 replications. Ns are drawn randomly...
-Step 1 of 10. Fitting 333 models with Ns in [205, 615].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s  
-Step 2 of 10. Fitting 267 models with Ns in [110, 342].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=03s  
-Step 3 of 10. Fitting 200 models with Ns in [49, 311].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=03s  
-Step 4 of 10. Fitting 133 models with Ns in [41, 320].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=02s  
-Step 5 of 10. Fitting 67 models with Ns in [41, 319].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=01s  
-Step 6 of 10. Fitting 67 models with Ns in [41, 316].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=01s  
-Step 7 of 10. Fitting 133 models with Ns in [198, 382].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=02s  
-Step 8 of 10. Fitting 200 models with Ns in [206, 342].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=03s  
-Step 9 of 10. Fitting 267 models with Ns in [219, 318].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=04s  
-Step 10 of 10. Fitting 333 models with Ns in [232, 295].
-  |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s ")
-```
+<!-- ```{r, echo = F} -->
+<!-- cat("Initiating smart search to find simulation based N for power of 0.8 within 10 steps -->
+<!-- and in total 2000 replications. Ns are drawn randomly... -->
+<!-- Step 1 of 10. Fitting 333 models with Ns in [205, 615]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s   -->
+<!-- Step 2 of 10. Fitting 267 models with Ns in [110, 342]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=03s   -->
+<!-- Step 3 of 10. Fitting 200 models with Ns in [49, 311]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=03s   -->
+<!-- Step 4 of 10. Fitting 133 models with Ns in [41, 320]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=02s   -->
+<!-- Step 5 of 10. Fitting 67 models with Ns in [41, 319]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=01s   -->
+<!-- Step 6 of 10. Fitting 67 models with Ns in [41, 316]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=01s   -->
+<!-- Step 7 of 10. Fitting 133 models with Ns in [198, 382]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=02s   -->
+<!-- Step 8 of 10. Fitting 200 models with Ns in [206, 342]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=03s   -->
+<!-- Step 9 of 10. Fitting 267 models with Ns in [219, 318]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=04s   -->
+<!-- Step 10 of 10. Fitting 333 models with Ns in [232, 295]. -->
+<!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s ") -->
+<!-- ``` -->
 
-The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"sr"`, which indicates that the latent variables should be collapsed to means (this is a very loose approximation of the latent variable, which can be arbitrarily wrong and is used for demonstration purposes here **[[CHECK THIS!!!!!! WRITE MORE]]**), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"logit"`, which means the significance decisions per parameter are modeled via a logistic regression model (see Schoemann, et al., 2014).  `Ntotal` is the total number of models fitted (here 2000 is rather small, this number should be increased for higher precision). `power_aim` is the desired power level (here 0.8), `alpha` is the corresponding type I-error rate (level of significance, here 0.05), `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console. used  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
+The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"sr"`, which indicates that the latent variables should be collapsed to means (this is a very loose approximation of the latent variable, which can be arbitrarily wrong and is used for demonstration purposes here **[[CHECK THIS!!!!!! WRITE MORE]]**), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"logit"`, which means the significance decisions per parameter are modeled via a logistic regression model (see Schoemann, et al., 2014).  `Ntotal` is the total number of models fitted (here 200 is very small, this number should be increased for higher precision). `power_aim` is the desired power level (here 0.8), `alpha` is the corresponding type I-error rate (level of significance, here 0.05), `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console. used  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
 
 The output object `Result_Power` is a list with the following objects:
 
