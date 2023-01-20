@@ -56,10 +56,9 @@ SR <- function(lavModel_Analysis, data,
           data_transformed <- data
      }
 
-
      # fit model
      model <- getModel(lavModel_structural_SR)
-     fitSR <- lavaan::sem(model = model, data = data_transformed, se = "robust")
+     fitSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed, se = "robust"))
      Parameters <- lavaan::parameterEstimates(fitSR)
      Parameters <- Parameters[,1:5]
      Parameters$matchLabel <- apply(Parameters[, 1:3], 1, function(x) paste(x, collapse = ""))
