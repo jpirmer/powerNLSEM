@@ -118,7 +118,32 @@ check_model <- function(lavModel)
           lavModel$fixed <- F
           lavModel$fixed[lavModel$lhs %in% LV & lavModel$op == "=~" & lavModel$rhs %in% OV] <- T
 
-          return(lavModel)
+
+
+          # check lower terms -----
+          added_model_syntax <- ""
+          for(mod in funRHS)
+          {
+               lavModel_temp <- lavModel[lavModel$op == "~" & lavModel$rhs == mod,,drop=F]
+               for(dv in unique(lavModel_temp$lhs))
+               {
+                    iv_mods <- stringr::str_split(string = mod, pattern = ":") |> unlist()
+                    iv_temp <- lavModel[lavModel$op == "~" & lavModel$lhs == dv,,drop =F]$rhs
+                    if(!iv_mods[1] %in% iv_temp)
+                    {
+                         added_model_syntax <- paste0(added_model_syntax, "\n", paste0(dv,"~0*",iv_mods[1]))
+                    }
+                    if(iv_mods[1] != iv_mods[2])
+                    {
+                         if(!iv_mods[2] %in% iv_temp)
+                         {
+                              added_model_syntax <- paste0(added_model_syntax, "\n", paste0(dv,"~0*",iv_mods[2]))
+                         }
+                    }
+               }
+          }
+
+          return(list("lavModel" = lavModel, "added_model_syntax" = added_model_syntax))
      }else{
           stop(paste0("Functional of variables used several times.\nIncluding: ",
                       paste(unique(c(funLHS[problematic_inds_LHS[complete.cases(problematic_inds_LHS)]],
