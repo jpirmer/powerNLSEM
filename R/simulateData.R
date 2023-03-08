@@ -1,9 +1,10 @@
 #' simulate data from lavModel object
 #' @param n sample size
 #' @param lavModel lavModel object
-#' @param appendLVs logical whether latent variables should be observed. Default to FALSE. (For developmental purposes)
-#' @param lavModel_attributes attributes of the lavModel object. If NULL, this is computed from lavModel. Default to NULL.
-#' @param matrices computed matrices for simulation. If NULL, this is computed from lavModel and lavModel_attributes. Default to NULL.
+#' @param appendLVs logical whether latent variables should be observed. Default to \code{FALSE}. (For developmental purposes)
+#' @param lavModel_attributes attributes of the lavModel object. If \code{NULL}, this is computed from lavModel. Default to \code{NULL}.
+#' @param matrices computed matrices for simulation. If \code{NULL}, this is computed from lavModel and lavModel_attributes. Default to \code{NULL}.
+#' @param seed a seed for reproducability. Default to \code{NULL}.
 #' @export
 
 simulateNLSEM <- function(n, lavModel, appendLVs = F, lavModel_attributes = NULL, matrices = NULL, seed = NULL) {
@@ -36,7 +37,7 @@ simulateNLSEM <- function(n, lavModel, appendLVs = F, lavModel_attributes = NULL
                colnames(NL) <- tempOrder$lvov
                LV <- cbind(LV, NL)
           }
-          # construct deoendent variable and append
+          # construct dependent variable and append
           if(unique(Order$type[Order$order == ord]) == "dv")
           {
                tempOrder <- Order[Order==ord,, drop = F]
