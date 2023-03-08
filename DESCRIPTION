@@ -10,7 +10,7 @@ License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends: stringr, lavaan, MplusAutomation, dplyr, ggplot2
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Suggests: 
     knitr,
     rmarkdown

@@ -18,11 +18,13 @@ simulateNLSEM(
 
 \item{lavModel}{lavModel object}
 
-\item{appendLVs}{logical whether latent variables should be observed. Default to FALSE. (For developmental purposes)}
+\item{appendLVs}{logical whether latent variables should be observed. Default to \code{FALSE}. (For developmental purposes)}
 
-\item{lavModel_attributes}{attributes of the lavModel object. If NULL, this is computed from lavModel. Default to NULL.}
+\item{lavModel_attributes}{attributes of the lavModel object. If \code{NULL}, this is computed from lavModel. Default to \code{NULL}.}
 
-\item{matrices}{computed matrices for simulation. If NULL, this is computed from lavModel and lavModel_attributes. Default to NULL.}
+\item{matrices}{computed matrices for simulation. If \code{NULL}, this is computed from lavModel and lavModel_attributes. Default to \code{NULL}.}
+
+\item{seed}{a seed for reproducability. Default to \code{NULL}.}
 }
 \description{
 simulate data from lavModel object
