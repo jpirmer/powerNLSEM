@@ -128,7 +128,7 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05, uncertainty_method = "",
 # fit power model
 fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
                             power_modeling_method, df, ind_min,
-                            power_aim, alpha, i = NULL, switchStep = NULL,
+                            power_aim, alpha, i = 0, switchStep = Inf,
                             Conditions, uncertainty_method = "") {
      if(length(table(df$Ns)) > 1)
      {

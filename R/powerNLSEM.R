@@ -38,9 +38,9 @@ powerNLSEM <- function(model, POI,
      Manifests <- handle_manifests(lavModel = lavModel, treat_manifest_as_latent = "ov")
      lavModel_Analysis <- Manifests$lavModel_Analysis
      data_transformations <- Manifests$data_transformations
-     lavModel_Analysis$matchLabel <- toupper(paste0(lavModel_Analysis$lhs,
-                                                    lavModel_Analysis$op,
-                                                    lavModel_Analysis$rhs))
+     lavModel_Analysis$matchLabel <- paste0(lavModel_Analysis$lhs,
+                                             lavModel_Analysis$op,
+                                             lavModel_Analysis$rhs)
 
      ### initialize ----
      dotdotdot <- list(...)

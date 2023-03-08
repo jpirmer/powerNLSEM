@@ -31,10 +31,13 @@ bruteforce_search <- function(POI,
           {
                N_start <- Ns; Nnew <- Ns
                Ns <- rep(Ns, Ntotal)
+          }else if(length(Ns) == Ntotal){
+               Ns <- Ns
           }else{
                Ns <- sample(x = Ns, size = Ntotal, replace = T)
           }
-     }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns))
+     }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns));  Ns <- sort(Ns, decreasing = T)
+
 
      if(verbose) cat(paste0("Initiating brute force search to find simulation based N for power of ",
                             power_aim, " within ",
@@ -76,11 +79,11 @@ bruteforce_search <- function(POI,
      args <- names(formals(fit_power_model))
      args <- args[args!="..."]
      N_temp <- do.call("fit_power_model", mget(args))
-     Nnew_temp <- N_temp$Nnew_temp
+     Nnew <- N_temp$Nnew
 
      # return ----
-     out <- list("N" = Nnew_temp, SigDecisions = df,
-                 "N_trials" = Nnew_temp)
+     out <- list("N" = Nnew, SigDecisions = df,
+                 "N_trials" = Nnew)
 
      return(out)
 }

@@ -10,6 +10,8 @@ sim_and_fit <- function(n, POI, method,
                            matrices = matrices)
      if(tolower(method) == "lms")
      {
+          # Mplus only works with upper cases:
+          POI <- toupper(POI); lavModel_Analysis$matchLabel <- toupper(lavModel_Analysis$matchLabel)
           fit <- try(LMS(lavModel_Analysis = lavModel_Analysis, data = data,
                          data_transformations = data_transformations, prefix = prefix), silent = T)
      }else if(tolower(method) %in% c("path", "regression", "scaleregression", "sr", "reg")){
