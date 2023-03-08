@@ -34,7 +34,7 @@ powerNLSEM <- function(model, POI,
                                                                     auto.cov.lv.x = T, auto.cov.y = T,
                                                                     as.data.frame. = T))
      lavModel <- add_varType(lavModel)
-     lavModel <- check_model(lavModel)
+     temp <- check_model(lavModel); lavModel <- temp$lavModel; added_model_syntax <- temp$added_model_syntax
      Manifests <- handle_manifests(lavModel = lavModel, treat_manifest_as_latent = "ov")
      lavModel_Analysis <- Manifests$lavModel_Analysis
      data_transformations <- Manifests$data_transformations
@@ -109,6 +109,7 @@ powerNLSEM <- function(model, POI,
      out$power_modeling_method <- power_modeling_method
      out$runtime <- t
      out$seed <- seed
+     out$model <- paste0(model, added_model_syntax, collapse = "\n")
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }
