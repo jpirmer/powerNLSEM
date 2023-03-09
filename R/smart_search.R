@@ -123,6 +123,7 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05, uncertainty_method = "",
      logit_lb <- logit_fit$fit - qnorm(p = 1-alpha/2)*logit_fit$se.fit
      power <- exp(logit_lb)/(1+exp(logit_lb))
      minN <- suppressWarnings(min(N_sequence[power>pow]))
+     if(abs(minN) == Inf & Nmax == 10^6) return(Inf)
      if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
                                           uncertainty_method =  uncertainty_method, Nmax = 10^6)
      return(minN)
