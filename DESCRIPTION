@@ -1,7 +1,7 @@
 Package: powerNLSEM
 Type: Package
 Title: Power Analysis for nonlinear (quadratic and interaction) SEM/ moderated and mediated SEM
-Version: 0.0.1
+Version: 0.0.2
 Author: Who wrote it
 Maintainer: Julien Patrick Irmer <yourself@somewhere.net>
 Description: Simulation based power analysis for nonlinear (and linear) SEM, path analysis and regression analysis. A theoretical framework is used to approximate the relation between power and sample size for given type I error rates and effect size.
