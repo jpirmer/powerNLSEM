@@ -12,10 +12,11 @@ smart_search <- function(POI,
                          switchStep = round(steps/2),
                          CORES, verbose = T,
                          uncertainty_method = "",
+                         seeds,
                          ...)
 {
      dotdotdot <- list(...)
-
+     sim_seeds <- seeds
      Reps <- get_Reps(type = type, Ntotal = Ntotal, steps = steps)
      Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
      Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
@@ -53,10 +54,12 @@ smart_search <- function(POI,
                                                                                         lavModel_attributes = lavModel_attributes,
                                                                                         matrices = matrices,
                                                                                         data_transformations = data_transformations,
-                                                                                        prefix = ni),
+                                                                                        prefix = ni,
+                                                                                        sim_seed = sim_seeds[ni]),
                                       simplify = T) |> t()
           if(CORES > 1L) parallel::stopCluster(cl)
 
+          sim_seeds <- sim_seeds[-c(1:length(Ns))] # delete used seeds
           Sigs <- data.frame(Fitted, Ns); names(Sigs) <- c(colnames(Fitted), "Ns")
 
           df <- rbind(df, Sigs); rm(Ns)

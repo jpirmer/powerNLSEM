@@ -26,6 +26,7 @@ powerNLSEM <- function(model, POI,
 {
      if(is.null(seed)) seed <- sample(1:10^9, size = 1)
      set.seed(seed)
+     seeds <- sample(1:10^9, size = Ntotal)
      t0 <- proc.time()
 
      ### prepare model ----
@@ -107,9 +108,9 @@ powerNLSEM <- function(model, POI,
      out$alpha <- alpha
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
-     out$runtime <- t
-     out$seed <- seed
+     out$seeds <- list("seed" = seed, "sim_seeds" = seeds)
      out$model <- paste0(model, added_model_syntax, collapse = "\n")
+     out$runtime <- t
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }

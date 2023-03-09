@@ -12,9 +12,11 @@ bruteforce_search <- function(POI,
                               verbose = T,
                               Ns = NULL,
                               uncertainty_method = "",
+                              seeds,
                               ...)
 {
      i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
+     sim_seeds <- seeds
      Reps <- get_Reps(type = type, Ntotal = Ntotal, steps = steps)
      # Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
      # Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
@@ -65,7 +67,8 @@ bruteforce_search <- function(POI,
                                                                                    lavModel_attributes = lavModel_attributes,
                                                                                    matrices = matrices,
                                                                                    data_transformations = data_transformations,
-                                                                                   prefix = ni),
+                                                                                   prefix = ni,
+                                                                                   sim_seed = sim_seeds[ni]),
                                  simplify = T) |> t()
      if(CORES > 1L) parallel::stopCluster(cl)
 

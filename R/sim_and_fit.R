@@ -4,7 +4,9 @@ sim_and_fit <- function(n, POI, method,
                         lavModel, lavModel_Analysis,
                         lavModel_attributes, matrices, data_transformations,
                         prefix,
+                        sim_seed,
                         ...){
+     set.seed(sim_seed)
      data <- simulateNLSEM(n = n, lavModel = lavModel,
                            lavModel_attributes = lavModel_attributes,
                            matrices = matrices)
