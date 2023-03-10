@@ -69,7 +69,11 @@ smart_search <- function(POI,
           ### run power model
           args <- names(formals(fit_power_model))
           args <- args[args!="..."]
-          N_temp <- do.call("fit_power_model", mget(args))
+          N_temp <- try(do.call("fit_power_model", mget(args)), silent = T)
+          if(inherits(N_temp, "try-error"))
+          {
+               N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
+          }
           Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
 
 
