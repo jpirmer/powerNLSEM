@@ -7,7 +7,7 @@
 simulateNLSEM(
   n,
   lavModel,
-  appendLVs = F,
+  appendLVs = FALSE,
   lavModel_attributes = NULL,
   matrices = NULL,
   seed = NULL
