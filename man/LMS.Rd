@@ -17,6 +17,8 @@ LMS(
 
 \item{data}{set to fit}
 
+\item{data_transformations}{Object containing info on possible data transformations.}
+
 \item{prefix}{an arbitrary prefix for the data set. This prevents issues when using parallelization and Mplus.}
 
 \item{algorithm}{algorithm to use. Default to INTEGRATION.}

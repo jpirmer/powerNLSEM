@@ -1,9 +1,15 @@
 #' Latent moderated strctured equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
+#' @param data_transformations Object containing info on possible data transformations.
 #' @param prefix an arbitrary prefix for the data set. This prevents issues when using parallelization and Mplus.
 #' @param algorithm algorithm to use. Default to INTEGRATION.
-#' @import MplusAutomation
+#' @import stats
+#' @importFrom stringr str_split
+#' @importFrom stringr str_replace
+#' @importFrom stringr str_replace_all
+#' @importFrom MplusAutomation runModels
+#' @importFrom MplusAutomation readModels
 #' @export
 
 
@@ -22,14 +28,14 @@ LMS <- function(lavModel_Analysis, data,
      lavModel_Analysis_LMS <- lavModel_Analysis_LMS[!((grepl(":", lavModel_Analysis_LMS$lhs) &
                                                             (lavModel_Analysis_LMS$op %in% c("~~", "~1"))) |
                                                      (grepl(":", lavModel_Analysis_LMS$rhs) &
-                                                           (lavModel_Analysis_LMS$op %in% c("~~", "~1")))),, drop = F]
+                                                           (lavModel_Analysis_LMS$op %in% c("~~", "~1")))),, drop = FALSE]
 
      # transform data
      if(!is.null(data_transformations))
      {
           NL_data <- sapply(1:nrow(data_transformations), FUN = function(d){v1 <- data[, data_transformations$V1[d]]
           v2 <- data[, data_transformations$V2[d]]
-          return(scale(v1, center = T, scale = F)*scale(v2, center = T, scale = F))
+          return(scale(v1, center = TRUE, scale = FALSE)*scale(v2, center = TRUE, scale = FALSE))
           })
           NL_data <- data.frame(NL_data); names(NL_data) <- data_transformations$newname
           data_transformed <- cbind(data, NL_data)
@@ -37,11 +43,11 @@ LMS <- function(lavModel_Analysis, data,
           data_transformed <- data
      }
 
-     write.table(x = data_transformed, file = data_file, col.names = F, row.names = F)
+     write.table(x = data_transformed, file = data_file, col.names = FALSE, row.names = FALSE)
      varnames <- names(data_transformed)
 
      # measurement model
-     temp_measurement <- lavModel_Analysis_LMS[lavModel_Analysis_LMS$op == "=~", c("lhs", "rhs", "start", "fixed"), drop = F]
+     temp_measurement <- lavModel_Analysis_LMS[lavModel_Analysis_LMS$op == "=~", c("lhs", "rhs", "start", "fixed"), drop = FALSE]
      if(nrow(temp_measurement)>0)
      {
           Measurement_models <- apply(temp_measurement, 1,
@@ -82,14 +88,14 @@ LMS <- function(lavModel_Analysis, data,
      }
 
      Structural_model <- apply(lavModel_Analysis_LMS_temp[lavModel_Analysis_LMS_temp$op == "~", c("lhs", "rhs", "start", "fixed"),
-                                                      drop = F], 1,
+                                                      drop = FALSE], 1,
                                FUN = function(x) paste0(x[1], " ON ", x[2],
                                                         ifelse(test = x[4], yes = "@", no = "*"),
                                                         round(as.numeric(x[3]), 3), ";"))
 
      # variances and residual variances
      Variances <- apply(lavModel_Analysis_LMS_temp[lavModel_Analysis_LMS_temp$rhs == lavModel_Analysis_LMS_temp$lhs & lavModel_Analysis_LMS_temp$op == "~~",
-                                               c("lhs", "rhs", "start", "fixed", "LHSvarType"), drop = F], 1,
+                                               c("lhs", "rhs", "start", "fixed", "LHSvarType"), drop = FALSE], 1,
                         FUN = function(x){ out <- paste0(x[1],
                                                          ifelse(test = x[4], yes = "@", no = "*"),
                                                          round(as.numeric(x[3]), 3), ";")
@@ -98,11 +104,11 @@ LMS <- function(lavModel_Analysis, data,
      Variances <- Variances[Variances != ""]
 
      temp <- lavModel_Analysis_LMS_temp[lavModel_Analysis_LMS_temp$rhs != lavModel_Analysis_LMS_temp$lhs & lavModel_Analysis_LMS_temp$op == "~~",
-                                    c("lhs", "rhs", "start", "fixed", "LHSvarType", "RHSvarType"), drop = F]
+                                    c("lhs", "rhs", "start", "fixed", "LHSvarType", "RHSvarType"), drop = FALSE]
      if(nrow(temp) > 0)
      {
           inds <- apply(temp, 1, function(x) x[5] == "funExo" | x[6] == "funExo")
-          temp <- temp[!inds, ,drop = F]
+          temp <- temp[!inds, ,drop = FALSE]
           if(nrow(temp) > 0)
           {
                Covariances <- apply(temp, 1,
@@ -120,7 +126,7 @@ LMS <- function(lavModel_Analysis, data,
 
 
      # Means and intercepts
-     temp_means <- lavModel_Analysis_LMS[lavModel_Analysis_LMS$op == "~1", c("lhs", "rhs", "start", "fixed"), drop = F]
+     temp_means <- lavModel_Analysis_LMS[lavModel_Analysis_LMS$op == "~1", c("lhs", "rhs", "start", "fixed"), drop = FALSE]
      if(nrow(temp_means)>0)
      {
           Mean_models <- apply(temp_means, 1,
@@ -164,7 +170,7 @@ MODEL:
                          '\n\n     !Means and Intercepts
              ', paste(Mean_models, sep = "", collapse ="\n             "))
 
-     cat(LMS_input, file = input_file, append = F)
+     cat(LMS_input, file = input_file, append = FALSE)
      MplusAutomation::runModels(target = input_file)
      fitMplus <- MplusAutomation::readModels(target = output_file)
 
@@ -175,7 +181,7 @@ MODEL:
      {
           Parameters$est <- NA; Parameters$se <- NA; Parameters$est_se <- NA; Parameters$pval <- NA
      }else{
-          if(any(Parameters$se > 20*max(as.numeric(lavModel_Analysis_LMS$start), na.rm = T)))
+          if(any(Parameters$se > 20*max(as.numeric(lavModel_Analysis_LMS$start), na.rm = TRUE)))
           {
                Parameters$est <- NA; Parameters$se <- NA; Parameters$est_se <- NA; Parameters$pval <- NA
           }
