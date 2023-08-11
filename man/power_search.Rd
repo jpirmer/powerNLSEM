@@ -34,7 +34,13 @@ power_search(
 
 \item{lavModel}{lavModel object describing the model.}
 
-\item{search_method}{String stating the search method. "smart" or "bruteforce".}
+\item{lavModel_Analysis}{lavModel object containg the parameters to be estimated.}
+
+\item{data_transformations}{Object containing info on data transformations.}
+
+\item{search_method}{String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.}
+
+\item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 
 \item{Ntotal}{Total number of models to be fitted. Higher number results in higher precision and longer runtime.}
 
@@ -46,7 +52,21 @@ power_search(
 
 \item{verbose}{Logical whether progress should be printed in console. Default to TRUE.}
 
-\item{...}{Additional arguments passed on to the search functions.}
+\item{Ns}{Sample sizes used in power estimation process. Default to \code{NULL}.}
+
+\item{N_start}{Starting sample size. Default to \code{nrow(lavModel)*10}}
+
+\item{type}{Default to \code{"u"}.}
+
+\item{steps}{Steps used in search_method = "smart", i.e., the smart algorithm. This is ignored if bruteforce is used. Default to 10.}
+
+\item{lb}{Lower bound of N used in search. Default to \code{nrow(lavModel)}}
+
+\item{switchStep}{Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}}
+
+\item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}}
+
+\item{seeds}{Seeds for reproducibility.}
 }
 \description{
 Search function to find N for desired power

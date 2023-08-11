@@ -2,16 +2,25 @@
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
 #' @param method Method used to fit to the data. Can be LMS or UPI.
 #' @param lavModel lavModel object describing the model.
-#' @param search_method String stating the search method. "smart" or "bruteforce".
+#' @param lavModel_Analysis lavModel object containg the parameters to be estimated.
+#' @param data_transformations Object containing info on data transformations.
+#' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
+#' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
 #' @param Ntotal Total number of models to be fitted. Higher number results in higher precision and longer runtime.
 #' @param power_aim Minimal power value to approximate. Default to .8.
 #' @param alpha Type I-error rate. Default to .05.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
 #' @param verbose Logical whether progress should be printed in console. Default to TRUE.
-#' @param ... Additional arguments passed on to the search functions.
-#' @import MplusAutomation
+#' @param  Ns Sample sizes used in power estimation process. Default to \code{NULL}.
+#' @param N_start Starting sample size. Default to \code{nrow(lavModel)*10}
+#' @param type  Default to \code{"u"}.
+#' @param steps Steps used in search_method = "smart", i.e., the smart algorithm. This is ignored if bruteforce is used. Default to 10.
+#' @param lb Lower bound of N used in search. Default to \code{nrow(lavModel)}
+#' @param switchStep Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}
+#' @param uncertainty_method Uncertainty method used for confidence intervals. Default to \code{""}
+#' @param seeds Seeds for reproducibility.
 #' @export
-#'
+
 power_search <- function(POI,
                          method, lavModel,
                          lavModel_Analysis,
