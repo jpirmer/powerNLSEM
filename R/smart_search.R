@@ -1,3 +1,6 @@
+#' @import stats
+#' @import parallel
+#' @importFrom pbapply pbsapply
 
 smart_search <- function(POI,
                          method, lavModel,
@@ -10,7 +13,7 @@ smart_search <- function(POI,
                          power_aim = .8, alpha = .05,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
-                         CORES, verbose = T,
+                         CORES, verbose = TRUE,
                          uncertainty_method = "",
                          seeds,
                          ...)
@@ -30,9 +33,9 @@ smart_search <- function(POI,
      {
 
           # sample sample sizes
-          Ns <- sample(seq(Nl, Nu, 1), size = Conditions$Reps[i], replace = T,
+          Ns <- sample(seq(Nl, Nu, 1), size = Conditions$Reps[i], replace = TRUE,
                        prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
-          Ns <- sort(Ns, decreasing = T)
+          Ns <- sort(Ns, decreasing = TRUE)
           if(verbose) cat(paste0("Step ", i, " of ", steps, ". Fitting ", length(Ns),
                                  " models with Ns in [", Nl, ", ", Nu,"].\n"))
 
@@ -56,7 +59,7 @@ smart_search <- function(POI,
                                                                                         data_transformations = data_transformations,
                                                                                         prefix = ni,
                                                                                         sim_seed = sim_seeds[ni]),
-                                      simplify = T) |> t()
+                                      simplify = TRUE) |> t()
           if(CORES > 1L) parallel::stopCluster(cl)
 
           sim_seeds <- sim_seeds[-c(1:length(Ns))] # delete used seeds
@@ -64,12 +67,12 @@ smart_search <- function(POI,
 
           df <- rbind(df, Sigs); rm(Ns)
 
-          ind_min <- which.min(colMeans(df, na.rm = T))# find POI of lowest power
+          ind_min <- which.min(colMeans(df, na.rm = TRUE))# find POI of lowest power
 
           ### run power model
           args <- names(formals(fit_power_model))
           args <- args[args!="..."]
-          N_temp <- try(do.call("fit_power_model", mget(args)), silent = T)
+          N_temp <- try(do.call("fit_power_model", mget(args)), silent = TRUE)
           if(inherits(N_temp, "try-error"))
           {
                N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
@@ -99,7 +102,7 @@ get_Reps <- function(type = "u", Ntotal = 1000, steps = 10) {
           Ns <- seq(temp, temp*(steps + steps%%2)/2, temp) |> round()
           temp_diff <- Ntotal/2 - sum(Ns)
           Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
-          Ns <- c(sort(Ns, decreasing = T), Ns)
+          Ns <- c(sort(Ns, decreasing = TRUE), Ns)
           if(length(Ns) != steps)
           {
                Ns <- c(Ns[1:((steps+1)/2-1)],
@@ -116,17 +119,28 @@ get_Reps <- function(type = "u", Ntotal = 1000, steps = 10) {
 }
 
 # find n from an glm-fit model
-find_n_from_glm <- function(fit, pow = .8, alpha = .05, uncertainty_method = "", Nmax = 10^4)
+find_n_from_glm <- function(fit, pow = .8, alpha = .05,
+                            uncertainty_method = "", Nmax = 10^4,
+                            power_modeling_method)
 {
      N_sequence <- 1:Nmax
      if(uncertainty_method == "exact")
      {
           alpha <- 1 # no influence on se
      }
-     logit_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = T)
-     logit_lb <- logit_fit$fit - qnorm(p = 1-alpha/2)*logit_fit$se.fit
-     power <- exp(logit_lb)/(1+exp(logit_lb))
-     minN <- suppressWarnings(min(N_sequence[power>pow]))
+     # predict linear model
+     reg_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = TRUE)
+     # transform linear model to power (depending on the modeling method)
+     if(tolower(power_modeling_method) == "logit")
+     {
+          power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
+          power <- exp(power_trans_lb)/(1+exp(power_trans_lb))
+     }else if(tolower(power_modeling_method) == "probit")
+     {
+          power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
+          power <- pnorm(power_trans_lb)
+     }
+     minN <- suppressWarnings(min(N_sequence[power >= pow]))
      if(abs(minN) == Inf & Nmax == 10^6) return(Inf)
      if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
                                           uncertainty_method =  uncertainty_method, Nmax = 10^6)
@@ -143,11 +157,15 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
           if(tolower(power_modeling_method) == "logit")
           {
                fit <- glm(df[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = "logit"), data = df)
+          }else if(tolower(power_modeling_method) == "probit")
+          {
+               fit <- glm(df[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = "probit"), data = df)
           }else{
                stop("This power modeling method has not been implemented.")
           }
           Nnew_temp <- find_n_from_glm(fit = fit, pow = power_aim, alpha = alpha,
-                                       uncertainty_method =  uncertainty_method)
+                                       uncertainty_method =  uncertainty_method,
+                                       power_modeling_method = power_modeling_method)
           if(i <= switchStep)
           {
                Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha = 1, uncertainty_method =  uncertainty_method)
@@ -198,7 +216,7 @@ evaluate_N <- function(N_temp, N, Sigs, ind_min, fit, lb, rel_tol = .5)
 {
      if(any(coef(fit)[-1] < 0))
      {
-          N_temp <- ifelse(mean(unlist(Sigs[,ind_min]), na.rm = T) < .5, Inf, -Inf)
+          N_temp <- ifelse(mean(unlist(Sigs[,ind_min]), na.rm = TRUE) < .5, Inf, -Inf)
      }
 
      if(abs(N_temp - N) > rel_tol*N){
@@ -207,10 +225,10 @@ evaluate_N <- function(N_temp, N, Sigs, ind_min, fit, lb, rel_tol = .5)
           N <- N_temp
      }
      # if variation is too low, change sample size drastically
-     if(mean(unlist(Sigs[,ind_min]), na.rm = T) > .99)
+     if(mean(unlist(Sigs[,ind_min]), na.rm = TRUE) > .99)
      {
           N <- round(N*rel_tol+1)
-     }else if(mean(unlist(Sigs[,ind_min]), na.rm = T) < .01)
+     }else if(mean(unlist(Sigs[,ind_min]), na.rm = TRUE) < .01)
      {
           N <- round(N/rel_tol)
      }
