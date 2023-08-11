@@ -6,10 +6,11 @@ Author: Who wrote it
 Maintainer: Julien Patrick Irmer <yourself@somewhere.net>
 Description: Simulation based power analysis for nonlinear (and linear) SEM, path analysis and regression analysis. A theoretical framework is used to approximate the relation between power and sample size for given type I error rates and effect size.
     The package offers a smart search algorithm to find the optimal N for given effect sizes type I error rates. Plots can be used to visualize the power relation to N for different parameters of interst (POI).
-License: GPL-3 + file LICENSE
+License: GPL-3 
 Encoding: UTF-8
 LazyData: true
-Depends: stringr, lavaan, MplusAutomation, dplyr, ggplot2
+Depends: ggplot2, stats, utils
+Imports: stringr, pbapply, mvtnorm, lavaan (>= 0.6.16), MplusAutomation (>= 0.7-2)
 RoxygenNote: 7.2.3
 Suggests: 
     knitr,
