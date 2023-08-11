@@ -179,7 +179,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
           df_long <- reshape(SUMMARY_agg, varying = list(names(SUMMARY_agg)[names(SUMMARY_agg) != "Ns"]),
                              direction = "long", v.names = c("Power"),
                              times = names(SUMMARY_agg)[names(SUMMARY_agg) != "Ns"], timevar = "Effect")
-          gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+geom_point(cex = .1)+
+          gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect, fill = Effect))+geom_point(cex = .1)+
                geom_smooth(method = "loess", formula = "y~x")+
                geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)
