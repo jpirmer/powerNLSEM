@@ -1,4 +1,7 @@
-
+#' @import stats
+#' @import utils
+#' @import parallel
+#' @importFrom pbapply pbsapply
 bruteforce_search <- function(POI,
                               method, lavModel,
                               lavModel_Analysis,
@@ -9,7 +12,7 @@ bruteforce_search <- function(POI,
                               power_aim = .8, alpha = .05,
                               lb = nrow(lavModel_Analysis),
                               CORES,
-                              verbose = T,
+                              verbose = TRUE,
                               Ns = NULL,
                               uncertainty_method = "",
                               seeds,
@@ -26,7 +29,7 @@ bruteforce_search <- function(POI,
      dotdotdot <- list(...)
      if(is.null(Ns)){
           Nl <- max(N_start/4, lb); Nu <- N_start*3
-          Ns <- sample(seq(Nl, Nu, 1), size = Ntotal, replace = T,
+          Ns <- sample(seq(Nl, Nu, 1), size = Ntotal, replace = TRUE,
                        prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
      }else{
           if(length(table(Ns))==1)
@@ -36,9 +39,9 @@ bruteforce_search <- function(POI,
           }else if(length(Ns) == Ntotal){
                Ns <- Ns
           }else{
-               Ns <- sample(x = Ns, size = Ntotal, replace = T)
+               Ns <- sample(x = Ns, size = Ntotal, replace = TRUE)
           }
-     }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns));  Ns <- sort(Ns, decreasing = T)
+     }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns));  Ns <- sort(Ns, decreasing = TRUE)
 
 
      if(verbose) cat(paste0("Initiating brute force search to find simulation based N for power of ",
@@ -69,19 +72,19 @@ bruteforce_search <- function(POI,
                                                                                    data_transformations = data_transformations,
                                                                                    prefix = ni,
                                                                                    sim_seed = sim_seeds[ni]),
-                                 simplify = T) |> t()
+                                 simplify = TRUE) |> t()
      if(CORES > 1L) parallel::stopCluster(cl)
 
      Sigs <- data.frame(Fitted, Ns); names(Sigs) <- c(colnames(Fitted), "Ns")
 
      df <- rbind(df, Sigs); rm(Ns)
 
-     ind_min <- which.min(colMeans(df, na.rm = T))# find POI of lowest power
+     ind_min <- which.min(colMeans(df, na.rm = TRUE))# find POI of lowest power
 
      ### run power model
      args <- names(formals(fit_power_model))
      args <- args[args!="..."]
-     N_temp <- try(do.call("fit_power_model", mget(args)), silent = T)
+     N_temp <- try(do.call("fit_power_model", mget(args)), silent = TRUE)
      if(inherits(N_temp, "try-error"))
      {
           N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
