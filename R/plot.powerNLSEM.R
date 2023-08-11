@@ -1,17 +1,20 @@
 #' plot powerNLSEM object
-#' @param out object of class powerNLSEM
+#' @param x object of class powerNLSEM
 #' @param min_num_bins minimal number of bins used for aggregating results. Default to 10.
 #' @param plot Character indicating what type of plot to create. Default to "power_model", referencing to the prediction of significant parameters using the model specified in power_modeling_method.
 #' @param power_modeling_method Character indicating the power modeling method used. This is only relevant when plot = "power_model" is used. Default to NULL, indicating to use the same power modeling method as was used in the powerNLSEM function.
 #' @param se Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to FALSE.
 #' @param alpha Alpha value used for confidence intervals, when se = TRUE. Default to NULL, indicating to use the same alpha as was used in the powerNLSEM function.
+#' @param ... Additional arguments passed on to the plot function.
 #' @returns Returns ggplot object of the type specified in plot.
 #' @import ggplot2
-#' @import dplyr
+#' @import stats
+#' @import utils
 #' @export
 
-plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_modeling_method = NULL, se = F, alpha = NULL)
+plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_modeling_method = NULL, se = FALSE, alpha = NULL, ...)
 {
+     out <- x
      if(is.null(power_modeling_method))
      {
           power_modeling_method <- out$power_modeling_method
@@ -23,14 +26,73 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
      if(tolower(plot) == "power_model")
      {
           Sigs <- out$SigDecisions
-          if(power_modeling_method == "logit")
+          if(power_modeling_method == "probit")
           {
                if(se)
                {
-                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))),
+                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
+                                                                          glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
+                                                                              family = binomial(link = "probit")),
+                                                                          se.fit = TRUE), simplify = FALSE)
+                    Probit <- c(); Probit_UB <- c(); Probit_LB <- c()
+                    for(i in 1:length(temp))
+                    {
+                         Probit <- cbind(Probit, temp[[i]]$fit)
+                         Probit_UB <- cbind(Probit_UB, temp[[i]]$fit + qnorm(1-alpha/2)*temp[[i]]$se.fit)
+                         Probit_LB <- cbind(Probit_LB, temp[[i]]$fit - qnorm(1-alpha/2)*temp[[i]]$se.fit)
+                    }
+                    powers <- pnorm(Probit)
+                    powers_UB <- pnorm(Probit_UB)
+                    powers_LB <- pnorm(Probit_LB)
+                    df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
+                    names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
+                                        paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
+                                        paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]),
+                                        "Ns")
+                    df_pred <- df_pred[order(df_pred$Ns),]
+                    df_long <- reshape(df_pred,
+                                       varying = list(names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
+                                                                            grepl(pattern = "lb_", names(df_pred))) &
+                                                                          (names(df_pred) != "Ns")],
+                                                      names(df_pred)[grepl(pattern = "ub_", names(df_pred))],
+                                                      names(df_pred)[grepl(pattern = "lb_", names(df_pred))]),
+                                       direction = "long", v.names = c("Power", "Power_ub", "Power_lb"),
+                                       times = names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
+                                                                     grepl(pattern = "lb_", names(df_pred)))
+                                                              & names(df_pred) != "Ns"],
+                                       timevar = "Effect")
+                    gg <- ggplot(df_long, aes(x = Ns, y = Power, col = Effect, fill = Effect))+
+                         geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
+                         geom_vline(xintercept = out$N, lwd = .5, lty = 3)+
+                         geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
+                         geom_line(lwd=1)+theme_minimal(base_size = 16)+
+                         ggtitle("Model implied power with confidence bands")
+
+               }else{
+                    Probit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
+                                                                           glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
+                                                                               family = binomial(link = "probit"))))
+                    powers <- pnorm(Probit)
+                    df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame(); names(df_pred) <- names(Sigs)
+                    df_pred <- df_pred[order(df_pred$Ns),]
+                    df_long <- reshape(df_pred, varying = list(names(df_pred)[names(df_pred) != "Ns"]),
+                                       direction = "long", v.names = c("Power"),
+                                       times = names(df_pred)[names(df_pred) != "Ns"], timevar = "Effect")
+                    gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
+                         geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
+                         geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
+                         geom_line(lwd = 1)+ggtitle("Model implied power")
+
+               }
+
+          }else if(power_modeling_method == "logit")
+          {
+               if(se)
+               {
+                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
                                                                           glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                               family = binomial(link = "logit")),
-                                                                          se.fit = T), simplify = F)
+                                                                          se.fit = TRUE), simplify = FALSE)
                     Logit <- c(); Logit_UB <- c(); Logit_LB <- c()
                     for(i in 1:length(temp))
                     {
@@ -41,7 +103,7 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                     powers <- exp(Logit)/(1 + exp(Logit))
                     powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
                     powers_LB <- exp(Logit_LB)/(1 + exp(Logit_LB))
-                    df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))) |> data.frame()
+                    df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
                     names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
                                         paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
                                         paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]),
@@ -66,11 +128,11 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
                          ggtitle("Model implied power with confidence bands")
 
                }else{
-                    Logit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))),
+                    Logit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
                                                                           glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                               family = binomial(link = "logit"))))
                     powers <- exp(Logit)/(1 + exp(Logit))
-                    df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = T):max(Sigs$Ns, na.rm = T))) |> data.frame(); names(df_pred) <- names(Sigs)
+                    df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame(); names(df_pred) <- names(Sigs)
                     df_pred <- df_pred[order(df_pred$Ns),]
                     df_long <- reshape(df_pred, varying = list(names(df_pred)[names(df_pred) != "Ns"]),
                                        direction = "long", v.names = c("Power"),
@@ -85,7 +147,7 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
           }
      }else if(tolower(plot) == "empirical")
      {
-          SUMMARY <- out$SigDecisions %>% group_by(Ns) %>% summarise_all(.funs = function(x) mean(x = x, na.rm = T)) %>% ungroup()
+          SUMMARY <- aggregate(.~ Ns, data = out$SigDecisions, FUN = function(x) mean(x = x, na.rm = TRUE))
           SUMMARY$Ns_count <- as.numeric(table(out$SigDecisions$Ns))
           NAMES <- names(SUMMARY)
           SUMMARY <- data.frame(SUMMARY)
@@ -106,7 +168,7 @@ plot.powerNLSEM <- function(out, min_num_bins = 10, plot = "power_model", power_
           for(i in unique(grouping))
           {
                SUMMARY_agg <- rbind(SUMMARY_agg,
-                                    colSums(SUMMARY[grouping == i,, drop = F] *
+                                    colSums(SUMMARY[grouping == i,, drop = FALSE] *
                                                  SUMMARY$Ns_count[grouping == i])/
                                          sum(SUMMARY$Ns_count[grouping == i]))
           }; SUMMARY_agg <- data.frame(SUMMARY_agg); names(SUMMARY_agg) <- NAMES

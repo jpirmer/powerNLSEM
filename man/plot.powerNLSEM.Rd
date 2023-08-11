@@ -5,16 +5,17 @@
 \title{plot powerNLSEM object}
 \usage{
 \method{plot}{powerNLSEM}(
-  out,
+  x,
   min_num_bins = 10,
   plot = "power_model",
   power_modeling_method = NULL,
-  se = F,
-  alpha = NULL
+  se = FALSE,
+  alpha = NULL,
+  ...
 )
 }
 \arguments{
-\item{out}{object of class powerNLSEM}
+\item{x}{object of class powerNLSEM}
 
 \item{min_num_bins}{minimal number of bins used for aggregating results. Default to 10.}
 
@@ -25,6 +26,8 @@
 \item{se}{Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to FALSE.}
 
 \item{alpha}{Alpha value used for confidence intervals, when se = TRUE. Default to NULL, indicating to use the same alpha as was used in the powerNLSEM function.}
+
+\item{...}{Additional arguments passed on to the plot function.}
 }
 \value{
 Returns ggplot object of the type specified in plot.
