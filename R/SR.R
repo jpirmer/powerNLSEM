@@ -1,4 +1,5 @@
 #' Scale Regression approach
+#' @importFrom stringr str_replace_all
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
 #' @param data_transformations Data transformations
@@ -20,7 +21,7 @@ SR <- function(lavModel_Analysis, data,
      if(!is.null(data_transformations))
      {
           data_transformations <- rbind(data_transformations, data_transformations_latent)
-          data_transformations <- data_transformations[!duplicated(data_transformations),, drop = F]
+          data_transformations <- data_transformations[!duplicated(data_transformations),, drop = FALSE]
      }else{
           data_transformations <- data_transformations_latent
      }
@@ -29,14 +30,14 @@ SR <- function(lavModel_Analysis, data,
      dataSR <- c()
 
      # collapse measurement model
-     temp_measurement <- lavModel_measurement_SR[lavModel_measurement_SR$op == "=~", c("lhs", "rhs", "start", "fixed"), drop = F]
+     temp_measurement <- lavModel_measurement_SR[lavModel_measurement_SR$op == "=~", c("lhs", "rhs", "start", "fixed"), drop = FALSE]
      if(nrow(temp_measurement)>0)
      {
           for(lhs in unique(temp_measurement$lhs))
           {
                dataSR <- cbind(dataSR,
                                rowMeans(data[, temp_measurement$rhs[temp_measurement$lhs == lhs],
-                                             drop = F], na.rm = T))
+                                             drop = FALSE], na.rm = TRUE))
           }
           dataSR <- data.frame(dataSR)
           names(dataSR) <- unique(temp_measurement$lhs)
@@ -48,7 +49,7 @@ SR <- function(lavModel_Analysis, data,
      {
           NL_data <- sapply(1:nrow(data_transformations), FUN = function(d){v1 <- data[, data_transformations$V1[d]]
           v2 <- data[, data_transformations$V2[d]]
-          return(scale(v1, center = T, scale = F)*scale(v2, center = T, scale = F))
+          return(scale(v1, center = TRUE, scale = FALSE)*scale(v2, center = TRUE, scale = FALSE))
           })
           NL_data <- data.frame(NL_data); names(NL_data) <- data_transformations$newname
           data_transformed <- cbind(data, NL_data)
@@ -67,7 +68,7 @@ SR <- function(lavModel_Analysis, data,
      Parameters <- Parameters[,-(1:3)]
 
      lavModel_Analysis_SR <- merge(x = lavModel_Analysis_SR, y = Parameters, by = "matchLabel",
-                                   all.x = T, no.dups = F)
+                                   all.x = TRUE, no.dups = FALSE)
      lavModel_Analysis_SR <- lavModel_Analysis_SR[order(lavModel_Analysis_SR$id),]
 
      return(lavModel_Analysis_SR)
