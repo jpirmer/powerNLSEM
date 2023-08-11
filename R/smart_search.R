@@ -168,13 +168,17 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
                                        power_modeling_method = power_modeling_method)
           if(i <= switchStep)
           {
-               Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha = 1, uncertainty_method =  uncertainty_method)
-               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha = alpha, uncertainty_method =  uncertainty_method)
+               Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha = 1, uncertainty_method =  uncertainty_method,
+                                          power_modeling_method = power_modeling_method)
+               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha = alpha, uncertainty_method =  uncertainty_method,
+                                          power_modeling_method = power_modeling_method)
           }else{
                Nl_temp <- find_n_from_glm(fit = fit, pow = max(power_aim - Conditions$Power_interval[i], .0001),
-                                          alpha = 1, uncertainty_method =  uncertainty_method)
+                                          alpha = 1, uncertainty_method =  uncertainty_method,
+                                          power_modeling_method = power_modeling_method)
                Nu_temp <- find_n_from_glm(fit = fit, pow = min(power_aim + Conditions$Power_interval[i], .9999),
-                                          alpha = alpha, uncertainty_method = uncertainty_method)
+                                          alpha = alpha, uncertainty_method = uncertainty_method,
+                                          power_modeling_method = power_modeling_method)
           }
      }else{
           fit <- NULL
