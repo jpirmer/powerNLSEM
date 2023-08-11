@@ -1,5 +1,7 @@
-#' @import stringr
-#' @import lavaan
+#' @importFrom stringr str_count
+#' @importFrom stringr str_split
+#' @importFrom stringr str_replace_all
+#' @import stats
 
 # model helper functions ----
 
@@ -52,6 +54,7 @@ add_varType <- function(lavModel)
 }
 
 ## check if model has impossible constraints or if the model can be simulated ----
+
 check_model <- function(lavModel)
 {
      if(any(lavModel$group > 1)) stop("Only one group is allowed, for now!")
@@ -71,7 +74,7 @@ check_model <- function(lavModel)
 
 
      # rename higher order terms (quadratic ones)
-     lavModel_attributes <- lavaan:::lav_partable_attributes(lavModel)
+     lavModel_attributes <- lavaan::lav_partable_attributes(lavModel)
      if("NA" %in% lavModel_attributes$vnames$eqs.x[[1]]) stop("Please do not use NA as a name for a latent variable.")
      problematic_names <- lavModel_attributes$vnames$eqs.x[[1]][sapply(stringr::str_split(string = lavModel_attributes$vnames$eqs.x[[1]],
                                                                                           pattern = ":"), function(x) any(x == "NA"))]
@@ -115,8 +118,8 @@ check_model <- function(lavModel)
           LV <- names(lavModel_attributes$vnames$lv.marker[[1]])
           OV <- lavModel_attributes$vnames$lv.marker[[1]]
           LV <- LV[OV != ""]; OV <- OV[OV != ""]
-          lavModel$fixed <- F
-          lavModel$fixed[lavModel$lhs %in% LV & lavModel$op == "=~" & lavModel$rhs %in% OV] <- T
+          lavModel$fixed <- FALSE
+          lavModel$fixed[lavModel$lhs %in% LV & lavModel$op == "=~" & lavModel$rhs %in% OV] <- TRUE
 
 
 
@@ -124,11 +127,11 @@ check_model <- function(lavModel)
           added_model_syntax <- ""
           for(mod in funRHS)
           {
-               lavModel_temp <- lavModel[lavModel$op == "~" & lavModel$rhs == mod,,drop=F]
+               lavModel_temp <- lavModel[lavModel$op == "~" & lavModel$rhs == mod,,drop=FALSE]
                for(dv in unique(lavModel_temp$lhs))
                {
                     iv_mods <- stringr::str_split(string = mod, pattern = ":") |> unlist()
-                    iv_temp <- lavModel[lavModel$op == "~" & lavModel$lhs == dv,,drop =F]$rhs
+                    iv_temp <- lavModel[lavModel$op == "~" & lavModel$lhs == dv,,drop =FALSE]$rhs
                     if(!iv_mods[1] %in% iv_temp)
                     {
                          added_model_syntax <- paste0(added_model_syntax, "\n", paste0(dv,"~0*",iv_mods[1]))
@@ -159,8 +162,9 @@ get_matrices <- function(lavModel, lavModel_attributes){
 
      # if(any(lavModel$RHSvarType == "obs" & lavModel$op == "~")) stop("Manifest variables can only be measurements for now!\nUsing manifest variables as predictors or outcome\nneeds special considerations on the matrices Beta, Psi,\nLambda and Theta and on the equation by equation simulation!")
      # if(any(lavModel$LHSvarType == "obsEndo" & lavModel$op == "~")) stop("Manifest variables can only be measurements for now!\nUsing manifest variables as predictors or outcome\nneeds special considerations on the matrices Beta, Psi,\nLambda and Theta and on the equation by equation simulation!")
-     if(any(lavModel$ustart[lavModel$op=="~1"] != 0)) stop("Changing the means of latent variables may influence the parameters\nand changes interpretation. This is not recommended.\nMeans for manifest variables should not influence powers,\nhence, this has not been implemented, yet!")
-
+     if(any(lavModel$ustart[lavModel$op=="~1"][complete.cases(lavModel$ustart[lavModel$op=="~1"])] != 0)){
+          stop("Changing the means of latent variables may influence the parameters\nand changes interpretation. This is not recommended.\nMeans for manifest variables should not influence powers,\nhence, this has not been implemented, yet!")
+     }
      # ov and lv variables ----
      ov <- lavModel_attributes$vnames$ov[[1]]
      ov <- ov[!grepl(":", ov)]
@@ -236,7 +240,7 @@ get_matrices <- function(lavModel, lavModel_attributes){
           Beta[RowCol_beta[i,1], RowCol_beta[i,2]]  <- parameter_starts_beta[i]
      }
      # keep rows only if they belong to dependent variables in the model
-     Beta_dv <- Beta[!sapply(1:nrow(Beta), function(i) all(Beta[i,]==0)),, drop = F]
+     Beta_dv <- Beta[!sapply(1:nrow(Beta), function(i) all(Beta[i,]==0)),, drop = FALSE]
 
      ## Psi ----
      Psi <- matrix(0, ncol = max(lavModel[lavModel$mat == "psi", c("col", "row")]),
@@ -299,7 +303,7 @@ get_matrices <- function(lavModel, lavModel_attributes){
           tempov.nl <- ov.nl
      }
      lvov <- IVs; templvov.y <- unique(c(ov.y, lv.y))
-     k <- max(order, na.rm = T)+1
+     k <- max(order, na.rm = TRUE)+1
      temp_Beta_dv <- Beta_dv
      for(i in 1:nrow(Beta_dv))
      {
@@ -307,7 +311,7 @@ get_matrices <- function(lavModel, lavModel_attributes){
           {
                # check whether nonlinear terms can be formed
                inds <- rowSums(t(sapply(stringr::str_split(string = templv.nl, pattern = ":"),
-                                        FUN = function(x) x %in% lvov)), na.rm = T) == 2
+                                        FUN = function(x) x %in% lvov)), na.rm = TRUE) == 2
                if(any(inds))
                {
                     new <-  templv.nl[inds]
@@ -321,7 +325,7 @@ get_matrices <- function(lavModel, lavModel_attributes){
           {
                # check whether nonlinear terms can be formed
                inds <- rowSums(t(sapply(stringr::str_split(string = tempov.nl, pattern = ":"),
-                                        FUN = function(x) x %in% lvov)), na.rm = T) == 2
+                                        FUN = function(x) x %in% lvov)), na.rm = TRUE) == 2
                if(any(inds))
                {
                     new <-  tempov.nl[inds]
@@ -345,7 +349,7 @@ get_matrices <- function(lavModel, lavModel_attributes){
                lvov <- c(lvov, new)
                order[is.na(order)][1:length(new)] <- k; k <- k + 1
                type[is.na(type)][1:length(new)] <- "dv"
-               temp_Beta_dv <- temp_Beta_dv[!(rownames(temp_Beta_dv) %in% new),,drop = F]
+               temp_Beta_dv <- temp_Beta_dv[!(rownames(temp_Beta_dv) %in% new),,drop = FALSE]
           }
      }
      Order <- data.frame(order, type, lvov)
@@ -372,7 +376,6 @@ get_matrices <- function(lavModel, lavModel_attributes){
                  "Lambda_small" = Lambda))
 }
 
-
 getModel <- function(lavModel)
 {
      temp <- lavModel[!((lavModel$LHSvarType == "funExo" & lavModel$RHSvarType == "funExo" & lavModel$op == "~~") |
@@ -385,6 +388,7 @@ getModel <- function(lavModel)
 
 
 # replace variable names in interactions
+
 replace_variable <- function(var_to_replace, var_to_replace_dv, dv2)
 {
      dv2_new <- unique(c(sapply(seq_along(var_to_replace_dv),
@@ -446,13 +450,13 @@ add_manifests_as_latent <- function(manifest_po, lavModel_Analysis)
      }
      temp_model <- paste(sapply(manifest_po, function(man) paste0(man, "_l =~ ", "1*",man, "\n", man, "~~0.001*",man)),
                          sep = "", collapse = "\n")
-     temp_lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = temp_model, meanstructure = T,auto.var = T,
-                                                                         auto.cov.lv.x = T, auto.cov.y = T,
-                                                                         as.data.frame. = T))
+     temp_lavModel <- lavaan::lavMatrixRepresentation(lavaan::lavaanify(model = temp_model, meanstructure = TRUE,auto.var = TRUE,
+                                                                         auto.cov.lv.x = TRUE, auto.cov.y = TRUE,
+                                                                         as.data.frame. = TRUE))
      temp_lavModel <- add_varType(temp_lavModel)
-     temp_lavModel <- temp_lavModel[temp_lavModel$op != "~1" & !is.na(temp_lavModel$ustart),, drop = F]
+     temp_lavModel <- temp_lavModel[temp_lavModel$op != "~1" & !is.na(temp_lavModel$ustart),, drop = FALSE]
      temp_lavModel$row <- temp_lavModel$col <- temp_lavModel$plabel <- NA
-     temp_lavModel$fixed <- T
+     temp_lavModel$fixed <- TRUE
      temp_lavModel$id <- (nrow(lavModel_Analysis)+1):(nrow(lavModel_Analysis)+nrow(temp_lavModel))
      lavModel_Analysis <- rbind(lavModel_Analysis, temp_lavModel)
      return(lavModel_Analysis)
@@ -464,7 +468,7 @@ add_manifests_as_latent <- function(manifest_po, lavModel_Analysis)
 add_covariances_to_lavModel <- function(lavModel_Analysis)
 {
      # add covariances among iv
-     lavModel_Analysis_attributes <- lavaan:::lav_partable_attributes(lavModel_Analysis)
+     lavModel_Analysis_attributes <- lavaan::lav_partable_attributes(lavModel_Analysis)
      # ov and lv variables ----
      ov <- lavModel_Analysis_attributes$vnames$ov[[1]]
      ov <- ov[!grepl(":", ov)]
@@ -485,7 +489,7 @@ add_covariances_to_lavModel <- function(lavModel_Analysis)
      IVs <- c(lv.iv, ov.iv)
      included_covs_iv <- lavModel_Analysis[lavModel_Analysis$rhs %in% IVs &
                                                 lavModel_Analysis$lhs %in% IVs &
-                                                lavModel_Analysis$lhs != lavModel_Analysis$rhs, c("lhs", "rhs"), drop = F]
+                                                lavModel_Analysis$lhs != lavModel_Analysis$rhs, c("lhs", "rhs"), drop = FALSE]
      if(length(IVs) >= 2)
      {
           temp <- c()
@@ -500,18 +504,18 @@ add_covariances_to_lavModel <- function(lavModel_Analysis)
           if(nrow(included_covs_iv) > 0)
           {
                ind <- apply(temp, 1, function(x) any(apply(included_covs_iv, MARGIN = 1, function(y) (all(x == y) | all(unlist(c(x[2], x[1])) == y)))))
-               temp <- temp[!ind, , drop = F]
+               temp <- temp[!ind, , drop = FALSE]
           }
           if(nrow(temp) > 0)
           {
                m_temp <- paste(apply(temp, 1, function(x) paste(x, collapse = "~~0*")), collapse = "\n")
-               temp_lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = m_temp, meanstructure = T,auto.var = T,
-                                                                                   auto.cov.lv.x = T, auto.cov.y = T,
-                                                                                   as.data.frame. = T))
+               temp_lavModel <- lavaan::lavMatrixRepresentation(lavaan::lavaanify(model = m_temp, meanstructure = TRUE,auto.var = TRUE,
+                                                                                   auto.cov.lv.x = TRUE, auto.cov.y = TRUE,
+                                                                                   as.data.frame. = TRUE))
                temp_lavModel <- add_varType(temp_lavModel)
-               temp_lavModel <- temp_lavModel[temp_lavModel$op == "~~" & temp_lavModel$rhs != temp_lavModel$lhs,, drop = F]
+               temp_lavModel <- temp_lavModel[temp_lavModel$op == "~~" & temp_lavModel$rhs != temp_lavModel$lhs,, drop = FALSE]
                temp_lavModel$row <- temp_lavModel$col <- temp_lavModel$plabel <- NA
-               temp_lavModel$fixed <- F
+               temp_lavModel$fixed <- FALSE
                temp_lavModel$id <- (nrow(lavModel_Analysis)+1):(nrow(lavModel_Analysis)+nrow(temp_lavModel))
                temp_lavModel$start <- temp_lavModel$ustart <- ""
                lavModel_Analysis <- rbind(lavModel_Analysis, temp_lavModel)
@@ -580,7 +584,7 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                manifest_po_nl <- manifest_po_nl[!(manifest_po_nl %in% manifest_as_lat)]
                if(length(manifest_po_nl) > 0)
                {
-                    OV_NL <- stringr::str_split(string = NL_effects[NL_effects$NL_type == "ov:ov",, drop = F]$NLs, pattern = ":")
+                    OV_NL <- stringr::str_split(string = NL_effects[NL_effects$NL_type == "ov:ov",, drop = FALSE]$NLs, pattern = ":")
                     data_transformations <- c()
                     for(i in seq_along(OV_NL))
                     {
@@ -611,11 +615,11 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
      # fix mean structure
      if(sum(lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs")>0L)
      {
-          lavModel_Analysis[lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs",]$fixed <- T
+          lavModel_Analysis[lavModel_Analysis$op == "~1" & lavModel_Analysis$LHSvarType != "obs",]$fixed <- TRUE
      }
 
      return(list("lavModel_Analysis" = lavModel_Analysis,
-                 "data_transformations" = data_transformations[!duplicated(data_transformations),,drop = F]))
+                 "data_transformations" = data_transformations[!duplicated(data_transformations),,drop = FALSE]))
 }
 
 
