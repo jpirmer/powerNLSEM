@@ -8,7 +8,7 @@ bruteforce_search <- function(POI,
                               data_transformations,
                               power_modeling_method,
                               N_start = nrow(lavModel_Analysis)*10,
-                              Ntotal = 1000,
+                              R = 1000,
                               power_aim = .8, alpha = .05,
                               lb = nrow(lavModel_Analysis),
                               CORES,
@@ -20,7 +20,7 @@ bruteforce_search <- function(POI,
 {
      i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
      sim_seeds <- seeds
-     Reps <- get_Reps(type = type, Ntotal = Ntotal, steps = steps)
+     Reps <- get_Reps(type = type, R = R, steps = steps)
      # Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
      # Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
      Rel_tol <- 2
@@ -29,24 +29,24 @@ bruteforce_search <- function(POI,
      dotdotdot <- list(...)
      if(is.null(Ns)){
           Nl <- max(N_start/4, lb); Nu <- N_start*3
-          Ns <- sample(seq(Nl, Nu, 1), size = Ntotal, replace = TRUE,
+          Ns <- sample(seq(Nl, Nu, 1), size = R, replace = TRUE,
                        prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
      }else{
           if(length(table(Ns))==1)
           {
                N_start <- Ns; Nnew <- Ns
-               Ns <- rep(Ns, Ntotal)
-          }else if(length(Ns) == Ntotal){
+               Ns <- rep(Ns, R)
+          }else if(length(Ns) == R){
                Ns <- Ns
           }else{
-               Ns <- sample(x = Ns, size = Ntotal, replace = TRUE)
+               Ns <- sample(x = Ns, size = R, replace = TRUE)
           }
      }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns));  Ns <- sort(Ns, decreasing = TRUE)
 
 
      if(verbose) cat(paste0("Initiating brute force search to find simulation based N for power of ",
                             power_aim, " within ",
-                            Ntotal, " replications...\n"))
+                            R, " replications...\n"))
      if(verbose) cat(paste0("Fitting ", length(Ns),
                             " models with Ns in [", Nl, ", ", Nu,"].\n"))
 

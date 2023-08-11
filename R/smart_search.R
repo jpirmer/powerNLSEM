@@ -9,7 +9,7 @@ smart_search <- function(POI,
                          search_method,
                          power_modeling_method,
                          N_start = nrow(lavModel)*10, type = "u",
-                         Ntotal = 1000, steps = 10,
+                         R = 1000, steps = 10,
                          power_aim = .8, alpha = .05,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
@@ -20,7 +20,7 @@ smart_search <- function(POI,
 {
      dotdotdot <- list(...)
      sim_seeds <- seeds
-     Reps <- get_Reps(type = type, Ntotal = Ntotal, steps = steps)
+     Reps <- get_Reps(type = type, R = R, steps = steps)
      Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
      Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
@@ -28,7 +28,7 @@ smart_search <- function(POI,
      Nl <- max(N_start / 2, lb); Nu <- N_start/2+N_start
      if(verbose) cat(paste0("Initiating smart search to find simulation based N for power of ",
                             power_aim, " within ", steps, " steps\nand in total ",
-                            Ntotal, " replications. Ns are drawn randomly...\n"))
+                            R, " replications. Ns are drawn randomly...\n"))
      for(i in 1:nrow(Conditions))
      {
 
@@ -90,17 +90,17 @@ smart_search <- function(POI,
 }
 
 # generate sequence of Ns
-get_Reps <- function(type = "u", Ntotal = 1000, steps = 10) {
+get_Reps <- function(type = "u", R = 1000, steps = 10) {
      if(tolower(type) == "increasing")
      {
-          temp <- Ntotal/(steps*(steps+1)/2)
+          temp <- R/(steps*(steps+1)/2)
           Ns <- seq(temp, temp*steps, temp) |> round()
-          temp_diff <- Ntotal - sum(Ns)
+          temp_diff <- R - sum(Ns)
           Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
      }else if(tolower(type) == "u"){
-          temp <- (Ntotal/2)/((steps + steps%%2)/2*((steps + steps%%2)/2+1)/2)
+          temp <- (R/2)/((steps + steps%%2)/2*((steps + steps%%2)/2+1)/2)
           Ns <- seq(temp, temp*(steps + steps%%2)/2, temp) |> round()
-          temp_diff <- Ntotal/2 - sum(Ns)
+          temp_diff <- R/2 - sum(Ns)
           Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
           Ns <- c(sort(Ns, decreasing = TRUE), Ns)
           if(length(Ns) != steps)
@@ -110,9 +110,9 @@ get_Reps <- function(type = "u", Ntotal = 1000, steps = 10) {
                        Ns[1+((steps+1)/2+1):(steps)])
           }
      }else if(tolower(type) == "equal"){
-          temp <- Ntotal/steps
+          temp <- R/steps
           Ns <- rep(temp, steps) |> round()
-          temp_diff <- Ntotal - sum(Ns)
+          temp_diff <- R - sum(Ns)
           Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
      }
      return(Ns)

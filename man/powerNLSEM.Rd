@@ -10,7 +10,7 @@ powerNLSEM(
   method,
   power_modeling_method = "probit",
   search_method = "smart",
-  Ntotal = 2000,
+  R = 2000,
   power_aim = 0.8,
   alpha = 0.05,
   CORES = max(c(parallel::detectCores() - 2, 1)),
@@ -30,7 +30,7 @@ powerNLSEM(
 
 \item{search_method}{String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.}
 
-\item{Ntotal}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
+\item{R}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
 
 \item{power_aim}{Minimal power value to approximate. Default to \code{.8}.}
 

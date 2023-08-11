@@ -12,7 +12,7 @@ power_search(
   data_transformations,
   search_method,
   power_modeling_method,
-  Ntotal = 1000,
+  R = 1000,
   power_aim = 0.8,
   alpha = 0.05,
   CORES,
@@ -42,7 +42,7 @@ power_search(
 
 \item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 
-\item{Ntotal}{Total number of models to be fitted. Higher number results in higher precision and longer runtime.}
+\item{R}{Total number of models to be fitted. Higher number results in higher precision and longer runtime.}
 
 \item{power_aim}{Minimal power value to approximate. Default to .8.}
 

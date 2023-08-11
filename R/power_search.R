@@ -6,7 +6,7 @@
 #' @param data_transformations Object containing info on data transformations.
 #' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
 #' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
-#' @param Ntotal Total number of models to be fitted. Higher number results in higher precision and longer runtime.
+#' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime.
 #' @param power_aim Minimal power value to approximate. Default to .8.
 #' @param alpha Type I-error rate. Default to .05.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
@@ -27,7 +27,7 @@ power_search <- function(POI,
                          data_transformations,
                          search_method,
                          power_modeling_method,
-                         Ntotal = 1000,
+                         R = 1000,
                          power_aim = .8,
                          alpha = .05,
                          CORES,

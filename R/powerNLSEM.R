@@ -7,7 +7,7 @@
 #' @param method Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).
 #' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
 #' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
-#' @param Ntotal Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
+#' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
 #' @param power_aim Minimal power value to approximate. Default to \code{.8}.
 #' @param alpha Type I-error rate. Default to \code{.05}.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
@@ -20,7 +20,7 @@ powerNLSEM <- function(model, POI,
                        method,
                        power_modeling_method = "probit",
                        search_method = "smart",
-                       Ntotal = 2000,
+                       R = 2000,
                        power_aim = .8,
                        alpha = .05,
                        CORES = max(c(parallel::detectCores()-2, 1)),
@@ -29,7 +29,7 @@ powerNLSEM <- function(model, POI,
 {
      if(is.null(seed)) seed <- sample(1:10^9, size = 1)
      set.seed(seed)
-     seeds <- sample(1:10^9, size = Ntotal)
+     seeds <- sample(1:10^9, size = R)
      t0 <- proc.time()
 
      ### prepare model ----
