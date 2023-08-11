@@ -8,13 +8,13 @@ powerNLSEM(
   model,
   POI,
   method,
-  power_modeling_method = "logit",
-  search_method,
+  power_modeling_method = "probit",
+  search_method = "smart",
   Ntotal = 2000,
   power_aim = 0.8,
   alpha = 0.05,
   CORES = max(c(parallel::detectCores() - 2, 1)),
-  verbose = T,
+  verbose = TRUE,
   seed = NULL,
   ...
 )
@@ -24,21 +24,21 @@ powerNLSEM(
 
 \item{POI}{Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.}
 
-\item{method}{Method used to fit to the data. Can be LMS or UPI.}
+\item{method}{Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).}
 
-\item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"logit"} indicating glm with logit link function with sqrt(n).}
+\item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 
-\item{search_method}{String stating the search method. Can be \code{"smart"} or \code{"bruteforce"}.}
+\item{search_method}{String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.}
 
 \item{Ntotal}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
 
-\item{power_aim}{Minimal power value to approximate. Default to .8.}
+\item{power_aim}{Minimal power value to approximate. Default to \code{.8}.}
 
-\item{alpha}{Type I-error rate. Default to .05.}
+\item{alpha}{Type I-error rate. Default to \code{.05}.}
 
 \item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
 
-\item{verbose}{Logical whether progress should be printed in console. Default to TRUE.}
+\item{verbose}{Logical whether progress should be printed in console. Default to \code{TRUE}.}
 
 \item{seed}{Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.}
 

@@ -1,27 +1,30 @@
 #' powerNLSEM function
+#' @import stats
+#' @import parallel
+#' @importFrom stringr str_replace_all
 #' @param model Model in lavaan syntax. See documentation for help and examples.
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
-#' @param method Method used to fit to the data. Can be LMS or UPI.
-#' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"logit"} indicating glm with logit link function with sqrt(n).
-#' @param search_method String stating the search method. Can be \code{"smart"} or \code{"bruteforce"}.
+#' @param method Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).
+#' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
+#' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
 #' @param Ntotal Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
-#' @param power_aim Minimal power value to approximate. Default to .8.
-#' @param alpha Type I-error rate. Default to .05.
+#' @param power_aim Minimal power value to approximate. Default to \code{.8}.
+#' @param alpha Type I-error rate. Default to \code{.05}.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
-#' @param verbose Logical whether progress should be printed in console. Default to TRUE.
+#' @param verbose Logical whether progress should be printed in console. Default to \code{TRUE}.
 #' @param seed Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.
 #' @param ... Additional arguments passed on to the search functions.
 #' @export
 
 powerNLSEM <- function(model, POI,
                        method,
-                       power_modeling_method = "logit",
-                       search_method,
+                       power_modeling_method = "probit",
+                       search_method = "smart",
                        Ntotal = 2000,
                        power_aim = .8,
                        alpha = .05,
                        CORES = max(c(parallel::detectCores()-2, 1)),
-                       verbose = T, seed = NULL,
+                       verbose = TRUE, seed = NULL,
                        ...)
 {
      if(is.null(seed)) seed <- sample(1:10^9, size = 1)
@@ -30,10 +33,10 @@ powerNLSEM <- function(model, POI,
      t0 <- proc.time()
 
      ### prepare model ----
-     lavModel <- lavaan:::lavMatrixRepresentation(lavaan::lavaanify(model = model,
-                                                                    meanstructure = T,auto.var = T,
-                                                                    auto.cov.lv.x = T, auto.cov.y = T,
-                                                                    as.data.frame. = T))
+     lavModel <- lavaan::lavMatrixRepresentation(lavaan::lavaanify(model = model,
+                                                                    meanstructure = TRUE,auto.var = TRUE,
+                                                                    auto.cov.lv.x = TRUE, auto.cov.y = TRUE,
+                                                                    as.data.frame. = TRUE))
      lavModel <- add_varType(lavModel)
      temp <- check_model(lavModel); lavModel <- temp$lavModel; added_model_syntax <- temp$added_model_syntax
      Manifests <- handle_manifests(lavModel = lavModel, treat_manifest_as_latent = "ov")
