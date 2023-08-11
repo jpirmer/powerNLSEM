@@ -1,3 +1,4 @@
+#' @import utils
 powerNLSEMStartupMessage <- function()
 {
      msg <- c(paste0("This is a beta version. Please report any bugs! powerNLSEM version ",
