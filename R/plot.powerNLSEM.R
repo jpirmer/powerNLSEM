@@ -66,7 +66,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                          geom_vline(xintercept = out$N, lwd = .5, lty = 3)+
                          geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
                          geom_line(lwd=1)+theme_minimal(base_size = 16)+
-                         ggtitle(paste0("Model implied power with confidence bands for ", method),
+                         ggtitle(paste0("Model implied power with confidence bands for ", out$method),
                                  subtitle = paste0("using ", power_modeling_method, " regression"))
 
                }else{
@@ -82,7 +82,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
                          geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
                          geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
-                         geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", method),
+                         geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", out$method),
                                                         subtitle = paste0("using ", power_modeling_method, " regression"))
 
 
@@ -128,7 +128,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                          geom_vline(xintercept = out$N, lwd = .5, lty = 3)+
                          geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
                          geom_line(lwd=1)+theme_minimal(base_size = 16)+
-                         ggtitle(paste0("Model implied power with confidence bands for ", method),
+                         ggtitle(paste0("Model implied power with confidence bands for ", out$method),
                               subtitle = paste0("using ", power_modeling_method, " regression"))
 
                }else{
@@ -144,7 +144,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
                          geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
                          geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
-                         geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", method),
+                         geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", out$method),
                                                     subtitle = paste0("using ", power_modeling_method, " regression"))
 
                }
@@ -188,7 +188,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                geom_smooth(method = "loess", formula = "y~x")+
                geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
-               ggtitle(paste0("Model implied power with confidence bands for ", method),
+               ggtitle(paste0("Model implied power with confidence bands for ", out$method),
                        subtitle = paste0("using LOESS"))
      }
 
