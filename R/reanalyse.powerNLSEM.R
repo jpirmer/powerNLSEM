@@ -20,7 +20,7 @@ reanalyse.powerNLSEM <- function(out, powerLevels = NULL, power_modeling_method 
 
      if(!is.vector(powerLevels)) stop("powerLevels needs to be a vector.")
 
-     Sigs <- out$SigDecisions
+     Sigs <- na.omit(out$SigDecisions)
      temp_list <- lapply(1:(ncol(Sigs)-1),
                          FUN = function(i) {fit <- glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                         family = binomial(link = power_modeling_method))

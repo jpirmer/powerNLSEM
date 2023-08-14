@@ -6,23 +6,23 @@
 \usage{
 reanalyse.powerNLSEM(
   out,
-  power_modeling_method,
-  powerLevels,
-  alpha,
-  uncertainty_method = ""
+  powerLevels = NULL,
+  power_modeling_method = NULL,
+  alpha = NULL,
+  uncertainty_method = NULL
 )
 }
 \arguments{
 \item{out}{object of class powerNLSEM}
 
-\item{power_modeling_method}{Character indicating the power modeling method used. This is only relevant when plot = "power_model" is used. Default to NULL, indicating to use the same power modeling method as was used in the powerNLSEM function.}
+\item{powerLevels}{Power levels for which the desired sample sizes should be computed. Needs to be a vector. Default to \code{NULL} indicating to use same power rate used in \code{powerNLSEM} object.}
 
-\item{powerLevels}{Power levels for which the desired sample sizes should be computed. Needs to be a vector.}
+\item{power_modeling_method}{Character indicating the power modeling method used. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} object.}
 
-\item{alpha}{Alpha value used for confidence intervals, when se = TRUE. Default to NULL, indicating to use the same alpha as was used in the powerNLSEM function.}
+\item{alpha}{Alpha value used for confidence intervals. Default to \code{NULL} indicating to use same alpha used in \code{powerNLSEM} object.}
 }
 \value{
-Returns list of sample sizes per effect. \code{Nall} refers to the sample size required per power level for all coefficients. \code{Npower} is a matrix containing the desired sample sizes per effect for every power level.
+Returns list of desired sample sizes per effect for each \code{powerLevel}. \code{Nall} refers to the sample size required per power level for all coefficients. \code{Npower} is a matrix containing the desired sample sizes per effect for every power level.
 }
 \description{
 Reanalyse powerNLSEM object
