@@ -109,6 +109,7 @@ powerNLSEM <- function(model, POI,
      out$power <- power_aim
      out$beta <- 1-power_aim
      out$alpha <- alpha
+     out$method <- method
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
      out$seeds <- list("seed" = seed, "sim_seeds" = seeds)
