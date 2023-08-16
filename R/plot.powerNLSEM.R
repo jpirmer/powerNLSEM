@@ -44,6 +44,13 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     powers <- pnorm(Probit)
                     powers_UB <- pnorm(Probit_UB)
                     powers_LB <- pnorm(Probit_LB)
+
+                    nonconvergence_UB <- apply(powers_UB, 2, function(x) all(x==1, na.rm = TRUE))
+                    nonconvergence_LB <- apply(powers_LB, 2, function(x) all(x==0, na.rm = TRUE))
+
+                    if(any(nonconvergence_UB)) powers_UB[, nonconvergence_UB] <- powers[, nonconvergence_UB]
+                    if(any(nonconvergence_LB)) powers_LB[, nonconvergence_LB] <- powers[, nonconvergence_LB]
+
                     df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
                     names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
                                         paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
@@ -106,6 +113,13 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     powers <- exp(Logit)/(1 + exp(Logit))
                     powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
                     powers_LB <- exp(Logit_LB)/(1 + exp(Logit_LB))
+
+                    nonconvergence_UB <- apply(powers_UB, 2, function(x) all(x==1, na.rm = TRUE))
+                    nonconvergence_LB <- apply(powers_LB, 2, function(x) all(x==0, na.rm = TRUE))
+
+                    if(any(nonconvergence_UB)) powers_UB[, nonconvergence_UB] <- powers[, nonconvergence_UB]
+                    if(any(nonconvergence_LB)) powers_LB[, nonconvergence_LB] <- powers[, nonconvergence_LB]
+
                     df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
                     names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
                                         paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
