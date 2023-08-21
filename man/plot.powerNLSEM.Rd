@@ -10,6 +10,7 @@
   plot = "power_model",
   power_modeling_method = NULL,
   se = FALSE,
+  power_aim = NULL,
   alpha = NULL,
   ...
 )
@@ -25,7 +26,9 @@
 
 \item{se}{Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to \code{FALSE}.}
 
-\item{alpha}{Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function.}
+\item{power_aim}{Power level to be included into the plot with respective N. If \code{NULL} the same power level as in the \code{powerNLSEM} function will be used. If set to \code{0} no power level and corresponding N will be plotted. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.}
+
+\item{alpha}{Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function. This does not influence the significance decision, although same alpha is used per default.}
 
 \item{...}{Additional arguments passed on to the plot function.}
 }

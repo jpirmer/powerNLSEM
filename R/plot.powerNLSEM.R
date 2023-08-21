@@ -4,7 +4,8 @@
 #' @param plot Character indicating what type of plot to create. Default to "power_model", referencing to the prediction of significant parameters using the model specified in power_modeling_method.
 #' @param power_modeling_method Character indicating the power modeling method used. This is only relevant when \code{plot = "power_model"} is used. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.
 #' @param se Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to \code{FALSE}.
-#' @param alpha Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function.
+#' @param power_aim Power level to be included into the plot with respective N. If \code{NULL} the same power level as in the \code{powerNLSEM} function will be used. If set to \code{0} no power level and corresponding N will be plotted. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.
+#' @param alpha Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function. This does not influence the significance decision, although same alpha is used per default.
 #' @param ... Additional arguments passed on to the plot function.
 #' @returns Returns \code{ggplot} object of the type specified in plot.
 #' @import ggplot2
@@ -12,7 +13,7 @@
 #' @import utils
 #' @export
 
-plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_modeling_method = NULL, se = FALSE, alpha = NULL, ...)
+plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_modeling_method = NULL, se = FALSE, power_aim = NULL, alpha = NULL, ...)
 {
      out <- x
      if(is.null(power_modeling_method))
@@ -44,55 +45,11 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     powers <- pnorm(Probit)
                     powers_UB <- pnorm(Probit_UB)
                     powers_LB <- pnorm(Probit_LB)
-
-                    nonconvergence_UB <- apply(powers_UB, 2, function(x) all(x==1, na.rm = TRUE))
-                    nonconvergence_LB <- apply(powers_LB, 2, function(x) all(x==0, na.rm = TRUE))
-
-                    if(any(nonconvergence_UB)) powers_UB[, nonconvergence_UB] <- powers[, nonconvergence_UB]
-                    if(any(nonconvergence_LB)) powers_LB[, nonconvergence_LB] <- powers[, nonconvergence_LB]
-
-                    df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
-                    names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
-                                        paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
-                                        paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]),
-                                        "Ns")
-                    df_pred <- df_pred[order(df_pred$Ns),]
-                    df_long <- reshape(df_pred,
-                                       varying = list(names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
-                                                                            grepl(pattern = "lb_", names(df_pred))) &
-                                                                          (names(df_pred) != "Ns")],
-                                                      names(df_pred)[grepl(pattern = "ub_", names(df_pred))],
-                                                      names(df_pred)[grepl(pattern = "lb_", names(df_pred))]),
-                                       direction = "long", v.names = c("Power", "Power_ub", "Power_lb"),
-                                       times = names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
-                                                                     grepl(pattern = "lb_", names(df_pred)))
-                                                              & names(df_pred) != "Ns"],
-                                       timevar = "Effect")
-                    gg <- ggplot(df_long, aes(x = Ns, y = Power, col = Effect, fill = Effect))+
-                         geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
-                         geom_vline(xintercept = out$N, lwd = .5, lty = 3)+
-                         geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
-                         geom_line(lwd=1)+theme_minimal(base_size = 16)+
-                         ggtitle(paste0("Model implied power with confidence bands for ", out$method),
-                                 subtitle = paste0("using ", power_modeling_method, " regression"))
-
                }else{
                     Probit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
                                                                            glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                                family = binomial(link = "probit"))))
                     powers <- pnorm(Probit)
-                    df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame(); names(df_pred) <- names(Sigs)
-                    df_pred <- df_pred[order(df_pred$Ns),]
-                    df_long <- reshape(df_pred, varying = list(names(df_pred)[names(df_pred) != "Ns"]),
-                                       direction = "long", v.names = c("Power"),
-                                       times = names(df_pred)[names(df_pred) != "Ns"], timevar = "Effect")
-                    gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
-                         geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
-                         geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
-                         geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", out$method),
-                                                        subtitle = paste0("using ", power_modeling_method, " regression"))
-
-
                }
 
           }else if(power_modeling_method == "logit")
@@ -114,56 +71,60 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
                     powers_LB <- exp(Logit_LB)/(1 + exp(Logit_LB))
 
-                    nonconvergence_UB <- apply(powers_UB, 2, function(x) all(x==1, na.rm = TRUE))
-                    nonconvergence_LB <- apply(powers_LB, 2, function(x) all(x==0, na.rm = TRUE))
-
-                    if(any(nonconvergence_UB)) powers_UB[, nonconvergence_UB] <- powers[, nonconvergence_UB]
-                    if(any(nonconvergence_LB)) powers_LB[, nonconvergence_LB] <- powers[, nonconvergence_LB]
-
-                    df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
-                    names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
-                                        paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
-                                        paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]),
-                                        "Ns")
-                    df_pred <- df_pred[order(df_pred$Ns),]
-                    df_long <- reshape(df_pred,
-                                       varying = list(names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
-                                                                        grepl(pattern = "lb_", names(df_pred))) &
-                                                                        (names(df_pred) != "Ns")],
-                                                     names(df_pred)[grepl(pattern = "ub_", names(df_pred))],
-                                                     names(df_pred)[grepl(pattern = "lb_", names(df_pred))]),
-                                       direction = "long", v.names = c("Power", "Power_ub", "Power_lb"),
-                                       times = names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
-                                                                grepl(pattern = "lb_", names(df_pred)))
-                                                               & names(df_pred) != "Ns"],
-                                       timevar = "Effect")
-                    gg <- ggplot(df_long, aes(x = Ns, y = Power, col = Effect, fill = Effect))+
-                         geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
-                         geom_vline(xintercept = out$N, lwd = .5, lty = 3)+
-                         geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
-                         geom_line(lwd=1)+theme_minimal(base_size = 16)+
-                         ggtitle(paste0("Model implied power with confidence bands for ", out$method),
-                              subtitle = paste0("using ", power_modeling_method, " regression"))
-
                }else{
                     Logit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
                                                                           glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
                                                                               family = binomial(link = "logit"))))
                     powers <- exp(Logit)/(1 + exp(Logit))
-                    df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame(); names(df_pred) <- names(Sigs)
-                    df_pred <- df_pred[order(df_pred$Ns),]
-                    df_long <- reshape(df_pred, varying = list(names(df_pred)[names(df_pred) != "Ns"]),
-                                       direction = "long", v.names = c("Power"),
-                                       times = names(df_pred)[names(df_pred) != "Ns"], timevar = "Effect")
-                    gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
-                         geom_hline(yintercept = out$power, lwd = .5, lty = 3)+ylab("Predicted Power")+xlab("N")+
-                         geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
-                         geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", out$method),
-                                                    subtitle = paste0("using ", power_modeling_method, " regression"))
 
                }
 
           }
+
+          if(se){
+               nonconvergence_UB <- apply(powers_UB, 2, function(x) all(x==1, na.rm = TRUE))
+               nonconvergence_LB <- apply(powers_LB, 2, function(x) all(x==0, na.rm = TRUE))
+               nonconvergence_both <- colMeans(powers_UB - powers_LB, na.rm = TRUE) > .95 # large CIs
+
+               if(any(nonconvergence_UB)) powers_UB[, nonconvergence_UB] <- powers[, nonconvergence_UB]
+               if(any(nonconvergence_LB)) powers_LB[, nonconvergence_LB] <- powers[, nonconvergence_LB]
+               if(any(nonconvergence_both)) powers_LB[, nonconvergence_both] <- powers_UB[, nonconvergence_both] <- powers[, nonconvergence_both]
+
+               df_pred <- cbind(powers, powers_UB, powers_LB, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame()
+               names(df_pred) <- c(names(Sigs)[names(Sigs)!="Ns"],
+                                   paste0("ub_", names(Sigs)[names(Sigs)!="Ns"]),
+                                   paste0("lb_", names(Sigs)[names(Sigs)!="Ns"]),
+                                   "Ns")
+               df_pred <- df_pred[order(df_pred$Ns),]
+               df_long <- reshape(df_pred,
+                                  varying = list(names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
+                                                                       grepl(pattern = "lb_", names(df_pred))) &
+                                                                     (names(df_pred) != "Ns")],
+                                                 names(df_pred)[grepl(pattern = "ub_", names(df_pred))],
+                                                 names(df_pred)[grepl(pattern = "lb_", names(df_pred))]),
+                                  direction = "long", v.names = c("Power", "Power_ub", "Power_lb"),
+                                  times = names(df_pred)[!(grepl(pattern = "ub_", names(df_pred)) |
+                                                                grepl(pattern = "lb_", names(df_pred)))
+                                                         & names(df_pred) != "Ns"],
+                                  timevar = "Effect")
+               gg <- ggplot(df_long, aes(x = Ns, y = Power, col = Effect, fill = Effect))+
+                    ylab("Predicted Power")+xlab("N")+
+                    geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
+                    geom_line(lwd=1)+
+                    ggtitle(paste0("Model implied power with confidence bands for ", out$method),
+                            subtitle = paste0("using ", power_modeling_method, " regression"))
+          }else{
+               df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame(); names(df_pred) <- names(Sigs)
+               df_pred <- df_pred[order(df_pred$Ns),]
+               df_long <- reshape(df_pred, varying = list(names(df_pred)[names(df_pred) != "Ns"]),
+                                  direction = "long", v.names = c("Power"),
+                                  times = names(df_pred)[names(df_pred) != "Ns"], timevar = "Effect")
+               gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
+                     ylab("Predicted Power")+xlab("N")+
+                     geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", out$method),
+                                               subtitle = paste0("using ", power_modeling_method, " regression"))
+          }
+
      }else if(tolower(plot) == "empirical")
      {
           SUMMARY <- aggregate(.~ Ns, data = out$SigDecisions, FUN = function(x) mean(x = x, na.rm = TRUE))
@@ -200,11 +161,23 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                              times = names(SUMMARY_agg)[names(SUMMARY_agg) != "Ns"], timevar = "Effect")
           gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect, fill = Effect))+geom_point(cex = .1)+
                geom_smooth(method = "loess", formula = "y~x")+
-               geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
-               geom_vline(xintercept = out$N, lwd = .5, lty = 3)+theme_minimal(base_size = 16)+
+               ylab("Predicted Power")+xlab("N")+
                ggtitle(paste0("Model implied power with confidence bands for ", out$method),
                        subtitle = paste0("using LOESS"))
      }
 
+     if(is.null(power_aim)){
+          gg <- gg + geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
+               geom_vline(xintercept = out$N, lwd = .5, lty = 3)
+     }else if(all(power_aim < 1) & all(power_aim > 0))
+     {
+          temp <- reanalyse.powerNLSEM(out, powerLevels = power_aim,
+                               power_modeling_method = power_modeling_method,
+                               alpha = alpha)
+          gg <- gg + geom_hline(yintercept = temp$power, lwd = .5, lty = 3)+
+               geom_vline(xintercept = temp$Nall, lwd = .5, lty = 3)
+
+     }
+     gg <- gg + theme_minimal(base_size = 16)
      return(gg)
 }
