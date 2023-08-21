@@ -24,7 +24,7 @@ sim_and_fit <- function(n, POI, method,
      }
      if(!inherits(fit, "try-error"))
      {
-          fit_temp <- fit[fit$matchLabel %in% POI,,drop = FALSE]
+          fit_temp <- fit[fit$matchLabel %in% df_POI$matchLabel,,drop = FALSE]
           # sort by POI
           fit <- merge(df_POI, fit_temp, by.x = "matchLabel", sort = FALSE)
           out <- try(abs(fit$est/fit$se), silent = TRUE)
