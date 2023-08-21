@@ -545,7 +545,8 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                manifest_po_nl <- manifest_po[inds_nl_man]
                if(length(manifest_po_nl)>0)
                {
-                    lavModel_Analysis <- add_manifests_as_latent(manifest_po = manifest_po_nl, lavModel_Analysis = lavModel_Analysis)
+                    lavModel_Analysis <- add_manifests_as_latent(manifest_po = manifest_po_nl,
+                                                                 lavModel_Analysis = lavModel_Analysis)
                }
           }else if(tolower(treat_manifest_as_latent) == "ov"){
                # treat ov as ov, as long as no interaction with lv
@@ -555,25 +556,26 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                manifest_po_nl <- manifest_po[inds_nl_man]
                NLs <- unique(lavModel_Analysis$rhs[grepl(pattern = ":",
                                                          x = lavModel_Analysis$rhs)])
-               if(length(manifest_po_nl)>0)
-               {
-                    NLs_split_list <- stringr::str_split(NLs, pattern = ":")
-                    LVs <- unique(lavModel_Analysis$lhs[lavModel_Analysis$op == "=~"])
 
-                    # manifests_nl <- lapply(NLs_split_list, FUN = function(nls) nls[1] %in% manifest_po_nl | nls[2] %in% manifest_po_nl) |> unlist()
+               # handle variables that need to be treated as ov
+               if(length(manifest_po_nl) == 0) manifest_po_nl <- NULL
+               # get variable type
+               Variable_type_nl <- t(sapply(NLs_split_list,
+                                            FUN = function(nls){temp1 <- ifelse(nls[1] %in% manifest_po_nl, "ov", "lv")
+                                            temp2 <- ifelse(nls[2] %in% manifest_po_nl, "ov", "lv")
+                                            return(c(temp1, temp2))}))
+               colnames(Variable_type_nl) <- c(paste0("var", 1:2, "_type"))
+               Variables_nl <- matrix(unlist(NLs_split_list), byrow = TRUE, ncol = 2)
+               colnames(Variables_nl) <-  c(paste0("var", 1:2))
+               # create type of interaction
+               NL_type <- apply(Variable_type_nl, 1, function(x) paste(sort(x), collapse = ":"))
 
-                    manifests_nl <- lapply(NLs_split_list, FUN = function(nls)if(any(manifest_po_nl %in% nls)){
-                         return(which(manifest_po_nl %in% nls))}else{return(NA)}) |> unlist() |> unique()
 
-                    latent_nl <- lapply(NLs_split_list, FUN = function(nls) nls[1] %in% LVs | nls[2] %in% LVs) |> unlist()
-                    NL_type <- rep("lv:lv", length(NLs))
-                    NL_type[manifests_nl & latent_nl] <- "lv:ov"
-                    NL_type[manifests_nl & !latent_nl] <- "ov:ov"
-               }else{
-                    NL_type <- rep("lv:lv", length(NLs))
-               }
-               NL_effects <- data.frame("NLs" = NLs, "ov" = manifest_po_nl[manifests_nl], "NL_type" = NL_type)
-               manifest_as_lat <-  NL_effects$ov[!is.na(NL_effects$ov)  & NL_effects$NL_type != "ov:ov"]
+               NL_effects <- cbind(data.frame("NLs" = NLs, "NL_type" = NL_type), Variables_nl, Variable_type_nl)
+
+               # check whether any variable needs to be treated as latent and add to model
+               manifest_as_lat <-  unique(c(NL_effects[NL_effects$NL_type != "ov:ov",]$var1[NL_effects[NL_effects$NL_type != "ov:ov",]$var1_type == "lv"],
+                                            NL_effects[NL_effects$NL_type != "ov:ov",]$var2[NL_effects[NL_effects$NL_type != "ov:ov",]$var2_type == "lv"]))
                # add ov:lv interactions into lavModel_Analysis object by treating ovs as lvs
                if(length(manifest_as_lat)>0)
                {
