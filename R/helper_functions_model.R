@@ -556,6 +556,7 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                manifest_po_nl <- manifest_po[inds_nl_man]
                NLs <- unique(lavModel_Analysis$rhs[grepl(pattern = ":",
                                                          x = lavModel_Analysis$rhs)])
+               NLs_split_list <- stringr::str_split(string = NLs, pattern = ":")
 
                # handle variables that need to be treated as ov
                if(length(manifest_po_nl) == 0) manifest_po_nl <- NULL
