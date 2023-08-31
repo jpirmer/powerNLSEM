@@ -1,6 +1,6 @@
 Package: powerNLSEM
 Type: Package
-Title: Model-implied simulation-based power estimation (MSPE) for nonlinear strctural equation models (SEM)
+Title: Model-implied simulation-based power estimation (MSPE) for nonlinear structural equation models (SEM)
 Version: 0.0.2
 Authors@R: c(person("Julien Patrick", "Irmer", email = "jirmer@psych.uni-frankfurt.de",
                     comment = c(ORCID = "0000-0002-7544-6483"),
