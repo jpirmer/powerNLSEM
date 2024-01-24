@@ -5,6 +5,7 @@
 #' @param model Model in lavaan syntax. See documentation for help and examples.
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
 #' @param method Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).
+#' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.
 #' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
 #' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
 #' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
@@ -18,6 +19,7 @@
 
 powerNLSEM <- function(model, POI,
                        method,
+                       test = "onesided",
                        power_modeling_method = "probit",
                        search_method = "smart",
                        R = 2000,
@@ -54,8 +56,6 @@ powerNLSEM <- function(model, POI,
      }else{
           Ns <- NULL
      }
-     dotdotdot <- list(...)
-
      if(!is.null(dotdotdot$N_start)){
           N_start <- dotdotdot$N_start
      }else{
@@ -85,6 +85,11 @@ powerNLSEM <- function(model, POI,
           uncertainty_method <- dotdotdot$uncertainty_method
      }else{
           uncertainty_method <- ""
+     }
+     if(!is.null(dotdotdot$FSmethod)){
+          FSmethod <- dotdotdot$FSmethod
+     }else{
+          FSmethod <- "SL"
      }
 
      POI <- stringr::str_replace_all(string = POI, pattern = " ", replacement = "")

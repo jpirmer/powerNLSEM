@@ -1,6 +1,7 @@
 #' Search function to find N for desired power
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
 #' @param method Method used to fit to the data. Can be LMS or UPI.
+#' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.
 #' @param lavModel lavModel object describing the model.
 #' @param lavModel_Analysis lavModel object containg the parameters to be estimated.
 #' @param data_transformations Object containing info on data transformations.
@@ -18,6 +19,7 @@
 #' @param lb Lower bound of N used in search. Default to \code{nrow(lavModel)}
 #' @param switchStep Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}
 #' @param uncertainty_method Uncertainty method used for confidence intervals. Default to \code{""}
+#' @param FSmethod Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.
 #' @param seeds Seeds for reproducibility.
 #' @export
 
@@ -39,6 +41,8 @@ power_search <- function(POI,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
                          uncertainty_method = "",
+                         FSmethod = "SL",
+                         test = "onesided",
                          seeds)
 {
      if(tolower(search_method %in% c("smart", "smart_search")))

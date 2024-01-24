@@ -15,7 +15,9 @@ smart_search <- function(POI,
                          switchStep = round(steps/2),
                          CORES, verbose = TRUE,
                          uncertainty_method = "",
+                         FSmethod = "SL",
                          seeds,
+                         test = "onesided",
                          ...)
 {
      dotdotdot <- list(...)
@@ -25,6 +27,8 @@ smart_search <- function(POI,
      Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
      Nfinal <- c(); Nnew <- N_start; df <- c()
+     df_est <- c(); df_se <- c(); df_pvalue_onesided <- c(); df_pvalue_twosided <- c()
+     df_sigs_onesided <- c(); df_sigs_twosided <- c(); vec_fitOK <- c()
      Nl <- max(N_start / 2, lb); Nu <- N_start/2+N_start
      if(verbose) cat(paste0("Initiating smart search to find simulation based N for power of ",
                             power_aim, " within ", steps, " steps\nand in total ",
@@ -58,14 +62,38 @@ smart_search <- function(POI,
                                                                                         matrices = matrices,
                                                                                         data_transformations = data_transformations,
                                                                                         prefix = ni,
+                                                                                        FSmethod = FSmethod,
                                                                                         sim_seed = sim_seeds[ni]),
-                                      simplify = TRUE) |> t()
+                                      simplify = FALSE)
           if(CORES > 1L) parallel::stopCluster(cl)
 
           sim_seeds <- sim_seeds[-c(1:length(Ns))] # delete used seeds
-          Sigs <- data.frame(Fitted, Ns); names(Sigs) <- c(colnames(Fitted), "Ns")
 
-          df <- rbind(df, Sigs); rm(Ns)
+
+
+          ###### HERE a lot of redundant stuff is being done!!!
+          ###### Rethink the use of Sigs and df in the original function and redo this part
+          ###### ----------------------------------------------------------------------------------------------------------->
+
+
+          df_est <- rbind(df_est, t(sapply(Fitted, "[[", "est")))
+          df_se <- rbind(df_se, t(sapply(Fitted, "[[", "se")))
+          df_pvalue_onesided <- rbind(df_pvalue_onesided, t(sapply(Fitted, "[[", "pvalue_onesided")))
+          df_pvalue_twosided <- rbind(df_pvalue_twosided, t(sapply(Fitted, "[[", "pvalue_twosided")))
+          df_sigs_onesided <- rbind(df_sigs_onesided, t(sapply(Fitted, "[[", "sigs_onesided")))
+          df_sigs_twosided <- rbind(df_sigs_twosided, t(sapply(Fitted, "[[", "sigs_twosided")))
+          temp_fitOK <- sapply(Fitted, "[[", "fitOK")
+          vec_fitOK <- rbind(vec_fitOK, temp_fitOK)
+
+          if(tolower(test) == "onesided")
+          {
+               Sigs <- data.frame(df_sigs_onesided, Ns); names(Sigs) <- c(colnames(df_sigs_onesided), "Ns")
+          }else if(tolower(test) == "twosided")
+          {
+               Sigs <- data.frame(df_sigs_twosided, Ns); names(Sigs) <- c(colnames(df_sigs_twosided), "Ns")
+          }
+          Sigs$fitOK <- temp_fitOK
+          df <- rbind(df, Sigs[Sigs$fitOK, ]); rm(Ns)
 
           ind_min <- which.min(colMeans(df, na.rm = TRUE))# find POI of lowest power
 
@@ -83,8 +111,18 @@ smart_search <- function(POI,
           Nfinal <- c(Nfinal, Nnew)
      }
 
-     out <- list("N" = Nnew, SigDecisions = df,
-                 "N_trials" = Nfinal)
+     if(tolower(test) == "onesided")
+     {
+          SigDecisions <- data.frame(df_sigs_onesided, Ns)
+          names(SigDecisions) <- c(colnames(df_sigs_onesided), "Ns")
+     }else if(tolower(test) == "twosided")
+     {
+          SigDecisions <- data.frame(df_sigs_twosided, Ns)
+          names(SigDecisions) <- c(colnames(df_sigs_twosided), "Ns")
+     }
+     out <- list("N" = Nnew, SigDecisions = SigDecisions,
+                 "N_trials" = Nfinal,
+                 df_est = df_est, df_se = df_se)
 
      return(out)
 }

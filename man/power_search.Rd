@@ -24,6 +24,7 @@ power_search(
   lb = nrow(lavModel),
   switchStep = round(steps/2),
   uncertainty_method = "",
+  FSmethod = "SR",
   seeds
 )
 }
@@ -65,6 +66,8 @@ power_search(
 \item{switchStep}{Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}}
 
 \item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}}
+
+\item{FSmethod}{Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.}
 
 \item{seeds}{Seeds for reproducibility.}
 }

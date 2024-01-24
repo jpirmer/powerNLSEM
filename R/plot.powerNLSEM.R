@@ -16,6 +16,10 @@
 plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_modeling_method = NULL, se = FALSE, power_aim = NULL, alpha = NULL, ...)
 {
      out <- x
+
+     # to get around R checks Ns, Power, Effect, Power_ub, Power_lb are names within a data.frame which are called in ggplot and hence are not defined gloabally:
+     Ns <- Power <- Effect <- Power_ub <- Power_lb <- NULL
+
      if(is.null(power_modeling_method))
      {
           power_modeling_method <- out$power_modeling_method

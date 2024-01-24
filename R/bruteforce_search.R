@@ -15,7 +15,9 @@ bruteforce_search <- function(POI,
                               verbose = TRUE,
                               Ns = NULL,
                               uncertainty_method = "",
+                              FSmethod = "SL",
                               seeds,
+                              test = "onesided",
                               ...)
 {
      i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
@@ -71,6 +73,7 @@ bruteforce_search <- function(POI,
                                                                                    matrices = matrices,
                                                                                    data_transformations = data_transformations,
                                                                                    prefix = ni,
+                                                                                   FSmethod = FSmethod,
                                                                                    sim_seed = sim_seeds[ni]),
                                  simplify = TRUE) |> t()
      if(CORES > 1L) parallel::stopCluster(cl)
