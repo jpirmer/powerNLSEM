@@ -2,22 +2,22 @@
 #' @importFrom stringr str_replace_all
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
+#' @param FSmethod Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.
 #' @param data_transformations Data transformations
 #' @export
 
-
-FSR <- function(lavModel_Analysis, data,
+FSR <- function(lavModel_Analysis, data, FSmethod = "SL",
                 data_transformations = NULL)
 {
-     lavModel_Analysis_SR <- lavModel_Analysis
-     lavModel_measurement_SR <- lavaan:::lav_partable_subset_measurement_model(lavModel_Analysis) |> data.frame()
-     lavModel_structural_SR <- lavaan:::lav_partable_subset_structural_model(lavModel_Analysis) |> data.frame()
+     lavModel_Analysis_FSR <- lavModel_Analysis
+     lavModel_measurement_FSR <- lav_partable_subset_measurement_model(lavModel_Analysis) |> data.frame()
+     lavModel_structural_FSR <- lav_partable_subset_structural_model(lavModel_Analysis) |> data.frame()
      # treat all latents as ov as they are collapsed to scales
-     lavModel_structural_SR$LHSvarType <- "obs"
-     lavModel_structural_SR$RHSvarType[lavModel_structural_SR$op != "~1"] <- "obs"
-     temp <- handle_manifests(lavModel = lavModel_structural_SR, treat_manifest_as_latent = "ov")
+     lavModel_structural_FSR$LHSvarType <- "obs"
+     lavModel_structural_FSR$RHSvarType[lavModel_structural_FSR$op != "~1"] <- "obs"
+     temp <- handle_manifests(lavModel = lavModel_structural_FSR, treat_manifest_as_latent = "ov")
      data_transformations_latent <- temp$data_transformations
-     lavModel_structural_SR <- temp$lavModel_Analysis
+     lavModel_structural_FSR <- temp$lavModel_Analysis
      if(!is.null(data_transformations))
      {
           data_transformations <- rbind(data_transformations, data_transformations_latent)
@@ -26,25 +26,28 @@ FSR <- function(lavModel_Analysis, data,
           data_transformations <- data_transformations_latent
      }
 
-
-     dataSR <- c()
-
+     dataFSR <- c()
      # collapse measurement model
-     temp_measurement <- lavModel_measurement_SR[lavModel_measurement_SR$op == "=~", c("lhs", "rhs", "start", "fixed"), drop = FALSE]
+     temp_measurement <- lavModel_measurement_FSR[lavModel_measurement_FSR$op == "=~",
+                                                  c("lhs", "rhs", "start", "fixed", "LHSvarType"),
+                                                  drop = FALSE]
      if(nrow(temp_measurement)>0)
      {
           for(lhs in unique(temp_measurement$lhs))
           {
-               dataSR <- cbind(dataSR,
-                               rowMeans(data[, temp_measurement$rhs[temp_measurement$lhs == lhs],
-                                             drop = FALSE], na.rm = TRUE))
+               dataFSR <- cbind(dataFSR,
+                                getFS(data = data, manifests = temp_measurement$rhs[temp_measurement$lhs == lhs],
+                                      latent = lhs, FSmethod = FSmethod,
+                                      endogene = unique(temp_measurement$LHSvarType[temp_measurement$lhs == lhs]) == "latEndo"))
           }
-          dataSR <- data.frame(dataSR)
-          names(dataSR) <- unique(temp_measurement$lhs)
+          dataFSR <- data.frame(dataFSR)
+          names(dataFSR) <- unique(temp_measurement$lhs)
+
+          if(any(apply(dataFSR, 2, function(x) all(is.na(x))))) stop("Error: Factor Scores could not be computed.")
      }
 
      # transform data
-     data <- cbind(data, dataSR)
+     data <- cbind(data, dataFSR)
      if(!is.null(data_transformations))
      {
           NL_data <- sapply(1:nrow(data_transformations), FUN = function(d){v1 <- data[, data_transformations$V1[d]]
@@ -58,7 +61,7 @@ FSR <- function(lavModel_Analysis, data,
      }
 
      # fit model
-     model <- getModel(lavModel_structural_SR)
+     model <- getModel(lavModel_structural_FSR)
      fitSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed, se = "robust"))
      Parameters <- lavaan::parameterEstimates(fitSR)
      Parameters <- Parameters[,1:5]
@@ -67,10 +70,10 @@ FSR <- function(lavModel_Analysis, data,
                                                        replacement = ":")
      Parameters <- Parameters[,-(1:3)]
 
-     lavModel_Analysis_SR <- merge(x = lavModel_Analysis_SR, y = Parameters, by = "matchLabel",
+     lavModel_Analysis_FSR <- merge(x = lavModel_Analysis_FSR, y = Parameters, by = "matchLabel",
                                    all.x = TRUE, no.dups = FALSE)
-     lavModel_Analysis_SR <- lavModel_Analysis_SR[order(lavModel_Analysis_SR$id),]
+     lavModel_Analysis_FSR <- lavModel_Analysis_FSR[order(lavModel_Analysis_FSR$id),]
 
-     return(lavModel_Analysis_SR)
+     return(lavModel_Analysis_FSR)
 }
 

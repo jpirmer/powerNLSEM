@@ -2,6 +2,7 @@
 
 S3method(plot,powerNLSEM)
 S3method(print,powerNLSEM)
+export(FSR)
 export(LMS)
 export(SR)
 export(UPI)
