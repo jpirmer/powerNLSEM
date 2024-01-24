@@ -10,8 +10,8 @@ SR <- function(lavModel_Analysis, data,
                 data_transformations = NULL)
 {
      lavModel_Analysis_SR <- lavModel_Analysis
-     lavModel_measurement_SR <- lavaan:::lav_partable_subset_measurement_model(lavModel_Analysis) |> data.frame()
-     lavModel_structural_SR <- lavaan:::lav_partable_subset_structural_model(lavModel_Analysis) |> data.frame()
+     lavModel_measurement_SR <- lav_partable_subset_measurement_model(lavModel_Analysis) |> data.frame()
+     lavModel_structural_SR <- lav_partable_subset_structural_model(lavModel_Analysis) |> data.frame()
      # treat all latents as ov as they are collapsed to scales
      lavModel_structural_SR$LHSvarType <- "obs"
      lavModel_structural_SR$RHSvarType[lavModel_structural_SR$op != "~1"] <- "obs"
@@ -59,7 +59,8 @@ SR <- function(lavModel_Analysis, data,
 
      # fit model
      model <- getModel(lavModel_structural_SR)
-     fitSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed, se = "robust"))
+     fitSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed,
+                                           se = "robust"))
      Parameters <- lavaan::parameterEstimates(fitSR)
      Parameters <- Parameters[,1:5]
      Parameters$matchLabel <- apply(Parameters[, 1:3], 1, function(x) paste(x, collapse = ""))
