@@ -3,6 +3,7 @@
 #' @param power_modeling_method Character indicating the power modeling method used. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} object.
 #' @param powerLevels Power levels for which the desired sample sizes should be computed. Needs to be a vector. Default to \code{NULL} indicating to use same power rate used in \code{powerNLSEM} object.
 #' @param alpha Alpha value used for confidence intervals. Default to \code{NULL} indicating to use same alpha used in \code{powerNLSEM} object.
+#' @param uncertainty_method Uncertainty method used for confidence intervals. Default to \code{""}
 #' @returns Returns list of desired sample sizes per effect for each \code{powerLevel}. \code{Nall} refers to the sample size required per power level for all coefficients. \code{Npower} is a matrix containing the desired sample sizes per effect for every power level.
 #' @import stats
 #' @import utils

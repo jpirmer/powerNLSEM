@@ -20,6 +20,8 @@ reanalyse.powerNLSEM(
 \item{power_modeling_method}{Character indicating the power modeling method used. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} object.}
 
 \item{alpha}{Alpha value used for confidence intervals. Default to \code{NULL} indicating to use same alpha used in \code{powerNLSEM} object.}
+
+\item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}}
 }
 \value{
 Returns list of desired sample sizes per effect for each \code{powerLevel}. \code{Nall} refers to the sample size required per power level for all coefficients. \code{Npower} is a matrix containing the desired sample sizes per effect for every power level.
