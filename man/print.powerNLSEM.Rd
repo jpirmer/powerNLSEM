@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{object of class powerNLSEM}
+
+\item{...}{Additional parameters for print}
 }
 \value{
 \code{powerNLSEM} object
