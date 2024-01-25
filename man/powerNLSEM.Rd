@@ -8,6 +8,7 @@ powerNLSEM(
   model,
   POI,
   method,
+  test = "onesided",
   power_modeling_method = "probit",
   search_method = "smart",
   R = 2000,
@@ -25,6 +26,8 @@ powerNLSEM(
 \item{POI}{Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.}
 
 \item{method}{Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).}
+
+\item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.}
 
 \item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 
