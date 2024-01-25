@@ -24,7 +24,8 @@ power_search(
   lb = nrow(lavModel),
   switchStep = round(steps/2),
   uncertainty_method = "",
-  FSmethod = "SR",
+  FSmethod = "SL",
+  test = "onesided",
   seeds
 )
 }
@@ -68,6 +69,8 @@ power_search(
 \item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}}
 
 \item{FSmethod}{Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.}
+
+\item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.}
 
 \item{seeds}{Seeds for reproducibility.}
 }
