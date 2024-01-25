@@ -26,10 +26,17 @@ smart_search <- function(POI,
      Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
      Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
+
+     df_POI <- data.frame("matchLabel" = POI)
+     fit_temp <- lavModel_Analysis[lavModel_Analysis$matchLabel %in% df_POI$matchLabel,,drop = FALSE]
+     # sort by POI
+     fit_temp <- merge(df_POI, fit_temp, by.x = "matchLabel", sort = FALSE)
+     truth <- fit_temp$ustart; names(truth) <- POI
+
      Nfinal <- c(); Nnew <- N_start; df <- c()
      df_est <- c(); df_se <- c(); df_pvalue_onesided <- c(); df_pvalue_twosided <- c()
      df_sigs_onesided <- c(); df_sigs_twosided <- c(); vec_fitOK <- c()
-     Nl <- max(N_start / 2, lb); Nu <- N_start/2+N_start
+     Nl <- max(N_start / 2, lb); Nu <- N_start/2+N_start; Nall <- c()
      if(verbose) cat(paste0("Initiating smart search to find simulation based N for power of ",
                             power_aim, " within ", steps, " steps\nand in total ",
                             R, " replications. Ns are drawn randomly...\n"))
@@ -39,7 +46,7 @@ smart_search <- function(POI,
           # sample sample sizes
           Ns <- sample(seq(Nl, Nu, 1), size = Conditions$Reps[i], replace = TRUE,
                        prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
-          Ns <- sort(Ns, decreasing = TRUE)
+          Ns <- sort(Ns, decreasing = TRUE); Nall <- c(Nall, Ns)
           if(verbose) cat(paste0("Step ", i, " of ", steps, ". Fitting ", length(Ns),
                                  " models with Ns in [", Nl, ", ", Nu,"].\n"))
 
@@ -69,33 +76,33 @@ smart_search <- function(POI,
 
           sim_seeds <- sim_seeds[-c(1:length(Ns))] # delete used seeds
 
+          if(length(POI) == 1)
+          {
+               temp_est <- sapply(Fitted, "[[", "est")
+               temp_est <- as.matrix(temp_est)
+               colnames(temp_est) <- POI; rownames(temp_est) <- NULL
+               temp_se <- sapply(Fitted, "[[", "se")
+               temp_se <- as.matrix(temp_se)
+               colnames(temp_se) <- POI; rownames(temp_se) <- NULL
+               }else{
+               df_est <- rbind(df_est, t(sapply(Fitted, "[[", "est")))
+               df_se <- rbind(df_se, t(sapply(Fitted, "[[", "se")))
+          }
+          vec_fitOK <- c(vec_fitOK, sapply(Fitted, "[[", "fitOK"))
 
-
-          ###### HERE a lot of redundant stuff is being done!!!
-          ###### Rethink the use of Sigs and df in the original function and redo this part
-          ###### ----------------------------------------------------------------------------------------------------------->
-
-
-          df_est <- rbind(df_est, t(sapply(Fitted, "[[", "est")))
-          df_se <- rbind(df_se, t(sapply(Fitted, "[[", "se")))
-          df_pvalue_onesided <- rbind(df_pvalue_onesided, t(sapply(Fitted, "[[", "pvalue_onesided")))
-          df_pvalue_twosided <- rbind(df_pvalue_twosided, t(sapply(Fitted, "[[", "pvalue_twosided")))
-          df_sigs_onesided <- rbind(df_sigs_onesided, t(sapply(Fitted, "[[", "sigs_onesided")))
-          df_sigs_twosided <- rbind(df_sigs_twosided, t(sapply(Fitted, "[[", "sigs_twosided")))
-          temp_fitOK <- sapply(Fitted, "[[", "fitOK")
-          vec_fitOK <- rbind(vec_fitOK, temp_fitOK)
-
+          # compute p-values
           if(tolower(test) == "onesided")
           {
-               Sigs <- data.frame(df_sigs_onesided, Ns); names(Sigs) <- c(colnames(df_sigs_onesided), "Ns")
+               trueMatrix <- matrix(rep(truth, each = length(Nall)), ncol = length(POI))
+               pvalue <- pnorm(sign(trueMatrix)*df_est / df_se, lower.tail = FALSE)
           }else if(tolower(test) == "twosided")
           {
-               Sigs <- data.frame(df_sigs_twosided, Ns); names(Sigs) <- c(colnames(df_sigs_twosided), "Ns")
+               pvalue <- 2*pnorm(abs(df_est) / df_se, lower.tail = FALSE)
           }
-          Sigs$fitOK <- temp_fitOK
-          df <- rbind(df, Sigs[Sigs$fitOK, ]); rm(Ns)
-
+          df <- data.frame(pvalue[vec_fitOK, ] < alpha); df$Ns <- Nall
           ind_min <- which.min(colMeans(df, na.rm = TRUE))# find POI of lowest power
+          relFreq_indMin <- mean(unlist(tail(df[, ind_min], n = length(Ns))),
+                                 na.rm = TRUE)
 
           ### run power model
           args <- names(formals(fit_power_model))
@@ -111,18 +118,14 @@ smart_search <- function(POI,
           Nfinal <- c(Nfinal, Nnew)
      }
 
-     if(tolower(test) == "onesided")
-     {
-          SigDecisions <- data.frame(df_sigs_onesided, Ns)
-          names(SigDecisions) <- c(colnames(df_sigs_onesided), "Ns")
-     }else if(tolower(test) == "twosided")
-     {
-          SigDecisions <- data.frame(df_sigs_twosided, Ns)
-          names(SigDecisions) <- c(colnames(df_sigs_twosided), "Ns")
-     }
-     out <- list("N" = Nnew, SigDecisions = SigDecisions,
+     df_est <- data.frame(df_est); names(df_est) <- POI
+     df_se <- data.frame(df_se); names(df_se) <- POI
+
+     out <- list("N" = Nnew,
                  "N_trials" = Nfinal,
-                 df_est = df_est, df_se = df_se)
+                 "est" = df_est, "se" = df_se,
+                 "Ns" = Nall, "fitOK" = vec_fitOK,
+                 "truth" = truth)
 
      return(out)
 }
@@ -186,8 +189,8 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
 }
 
 # fit power model
-fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
-                            power_modeling_method, df, ind_min,
+fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
+                            power_modeling_method, df, relFreq_indMin,
                             power_aim, alpha, i = 0, switchStep = Inf,
                             Conditions, uncertainty_method = "") {
      if(length(table(df$Ns)) > 1)
@@ -231,14 +234,17 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
      # new iteration of Ns
      if(!is.null(fit))
      {
-          Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew, Sigs = Sigs,
-                             ind_min = ind_min, fit = fit, lb = lb,
+          Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew,
+                             relFreq_indMin = relFreq_indMin,
+                             fit = fit, lb = lb,
                              rel_tol = Conditions$Rel_tol[i])
-          Nl <- evaluate_N(N_temp = Nl_temp, N = Nl, Sigs = Sigs,
-                           ind_min = ind_min, fit = fit, lb = lb,
+          Nl <- evaluate_N(N_temp = Nl_temp, N = Nl,
+                           relFreq_indMin = relFreq_indMin,
+                           fit = fit, lb = lb,
                            rel_tol = Conditions$Rel_tol[i])
-          Nu <- evaluate_N(N_temp = Nu_temp, N = Nu, Sigs = Sigs,
-                           ind_min = ind_min, fit = fit, lb = lb,
+          Nu <- evaluate_N(N_temp = Nu_temp, N = Nu,
+                           relFreq_indMin = relFreq_indMin,
+                           fit = fit, lb = lb,
                            rel_tol = Conditions$Rel_tol[i])
      }else{
           Nnew <- Nnew_temp; Nl <- Nl_temp; Nu <- Nu_temp
@@ -252,13 +258,12 @@ fit_power_model <- function(Nnew, Nl, Nu, Sigs, lb,
   return(N_out)
 }
 
-
 # evaluate resonablity of N
-evaluate_N <- function(N_temp, N, Sigs, ind_min, fit, lb, rel_tol = .5)
+evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
 {
      if(any(coef(fit)[-1] < 0))
      {
-          N_temp <- ifelse(mean(unlist(Sigs[,ind_min]), na.rm = TRUE) < .5, Inf, -Inf)
+          N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
      }
 
      if(abs(N_temp - N) > rel_tol*N){
@@ -267,10 +272,10 @@ evaluate_N <- function(N_temp, N, Sigs, ind_min, fit, lb, rel_tol = .5)
           N <- N_temp
      }
      # if variation is too low, change sample size drastically
-     if(mean(unlist(Sigs[,ind_min]), na.rm = TRUE) > .99)
+     if(relFreq_indMin > .99)
      {
           N <- round(N*rel_tol+1)
-     }else if(mean(unlist(Sigs[,ind_min]), na.rm = TRUE) < .01)
+     }else if(relFreq_indMin < .01)
      {
           N <- round(N/rel_tol)
      }
