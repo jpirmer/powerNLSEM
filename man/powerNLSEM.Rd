@@ -47,6 +47,9 @@ powerNLSEM(
 
 \item{...}{Additional arguments passed on to the search functions.}
 }
+\value{
+Returns an list object of class \code{powerNLSEM}.
+}
 \description{
 powerNLSEM function
 }

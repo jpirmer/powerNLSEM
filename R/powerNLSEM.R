@@ -15,6 +15,7 @@
 #' @param verbose Logical whether progress should be printed in console. Default to \code{TRUE}.
 #' @param seed Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.
 #' @param ... Additional arguments passed on to the search functions.
+#' @returns Returns an list object of class \code{powerNLSEM}.
 #' @export
 
 powerNLSEM <- function(model, POI,
