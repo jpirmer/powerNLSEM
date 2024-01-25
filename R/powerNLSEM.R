@@ -94,10 +94,8 @@ powerNLSEM <- function(model, POI,
 
      POI <- stringr::str_replace_all(string = POI, pattern = " ", replacement = "")
 
-
      args <- names(formals(power_search))
      args <- args[args!="..."]
-
 
      if(!all(POI %in% lavModel_Analysis$matchLabel)){
           POI_missing <- POI[(!POI %in% lavModel_Analysis$matchLabel)]
@@ -108,6 +106,22 @@ powerNLSEM <- function(model, POI,
      ### run power analysis ----
      out <- do.call("power_search", mget(args))
 
+     # examine fitting performance via weighted average Bias, Relative Bias and RWMSE
+     TruthMat <- matrix(rep(out$truth, each = R),
+                            ncol = length(POI))
+     Bias <- (out$est - TruthMat)[out$fitOK, ]
+     RelBias <- Bias / TruthMat[out$fitOK, ]
+     AvgWeightedBias <- t(as.matrix(Bias)) %*% as.matrix(out$Ns[out$fitOK]) /
+          sum(out$Ns[out$fitOK])
+     AvgWeightedRelBias <- t(as.matrix(RelBias)) %*% as.matrix(out$Ns[out$fitOK]) /
+          sum(out$Ns[out$fitOK])
+     AvgWeightedRWMSE <- sqrt(t(as.matrix(Bias^2)) %*% as.matrix(out$Ns[out$fitOK]) /
+                                  sum(out$Ns[out$fitOK]))
+
+     Performance <- data.frame(rbind(t(AvgWeightedBias),
+                                     t(AvgWeightedRelBias), t(AvgWeightedRWMSE)))
+     rownames(Performance) <- c("Bias", "RelBias", "RWMSE")
+     AveragePerformance <- rowMeans(Performance)
 
      ### return results ----
      t <- proc.time()-t0
@@ -117,6 +131,11 @@ powerNLSEM <- function(model, POI,
      out$method <- method
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
+     out$FSmethod <- FSmethod
+     out$test <- test
+     out$convergenceRate <- mean(out$fitOK)
+     out$Performance <- Performance
+     out$AveragePerformance <- AveragePerformance
      out$seeds <- list("seed" = seed, "sim_seeds" = seeds)
      out$model <- paste0(model, added_model_syntax, collapse = "\n")
      out$runtime <- t
