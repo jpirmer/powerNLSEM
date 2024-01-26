@@ -16,6 +16,8 @@ smart_search <- function(POI,
                          CORES, verbose = TRUE,
                          uncertainty_method = "",
                          FSmethod = "SL",
+                         matchPI =TRUE,
+                         PIcentering = "doubleMC",
                          seeds,
                          test = "onesided",
                          ...)

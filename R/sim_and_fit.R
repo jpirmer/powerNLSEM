@@ -7,6 +7,8 @@ sim_and_fit <- function(n, POI, method,
                         prefix,
                         sim_seed,
                         FSmethod = "SL",
+                        matchPI =TRUE,
+                        PIcentering = "doubleMC",
                         ...){
      set.seed(sim_seed); df_POI <- data.frame("matchLabel" = POI)
      data <- simulateNLSEM(n = n, lavModel = lavModel,
