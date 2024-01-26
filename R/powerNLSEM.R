@@ -99,6 +99,16 @@ powerNLSEM <- function(model, POI,
      }else{
           FSmethod <- "SL"
      }
+     if(!is.null(dotdotdot$matchPI)){
+          matchPI <- dotdotdot$matchPI
+     }else{
+          matchPI <- TRUE
+     }
+     if(!is.null(dotdotdot$PIcentering)){
+          PIcentering <- dotdotdot$PIcentering
+     }else{
+          PIcentering <- "doubleMC"
+     }
 
      # check input ------
      if(tolower(method) == "lms")
