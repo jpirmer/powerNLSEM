@@ -62,8 +62,11 @@ FSR <- function(lavModel_Analysis, data, FSmethod = "SL",
 
      # fit model
      model <- getModel(lavModel_structural_FSR)
-     fitSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed, se = "robust"))
-     Parameters <- lavaan::parameterEstimates(fitSR)
+     fitFSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed, se = "robust"))
+     if(!(lav_object_post_check(fitFSR) & fitFSR@optim$converged)){
+          stop("Error: Factor Scores Regression could not be computed.")
+     }
+     Parameters <- lavaan::parameterEstimates(fitFSR)
      Parameters <- Parameters[,1:5]
      Parameters$matchLabel <- apply(Parameters[, 1:3], 1, function(x) paste(x, collapse = ""))
      Parameters$matchLabel <- stringr::str_replace_all(string = Parameters$matchLabel, pattern = "_",
