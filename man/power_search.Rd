@@ -26,6 +26,9 @@ power_search(
   uncertainty_method = "",
   FSmethod = "SL",
   test = "onesided",
+  matchPI = TRUE,
+  PIcentering = "doubleMC",
+  liberalInspection = FALSE,
   seeds
 )
 }
@@ -72,11 +75,13 @@ power_search(
 
 \item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.}
 
-\item{seeds}{Seeds for reproducibility.}
-
-\item{matchPI}{Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products. Default to \code{TRUE}.}
+\item{matchPI}{Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products. Default to \code{TRUE}. The observations are matched by order given when specifying the measurement model.}
 
 \item{PIcentering}{String indicating which method of centering should be used when constructing product indicators. String is converted to the arguments \code{meanC}, \code{doubleMC}, and \code{residualMC}, of the \code{semTools::indProd} function. Default to \code{"doubleMC"} for double mean centering the resulting products (Lin et. al., 2010). Use \code{"meanC"} for mean centering the main effect indicator before making the products or \code{"residualC"} for residual centering the products by the main effect indicators (Little, Bovaird, & Widaman, 2006). \code{"none"} or any other input than the previously described results in no centering (use with caution!).}
+
+\item{liberalInspection}{Logical whether the inspection of estimation truthworthiness should be very liberal (i.e., allowing for non-positive definite Hessians in standard error estimation or non-positive residual covariance matrices or latent covariance matrices). Default to \code{FALSE}. Being liberal is not adviced and should be checked for a single data set!}
+
+\item{seeds}{Seeds for reproducibility.}
 }
 \description{
 The function that initializes the search process. The \code{powerNLSEM} function actually is a wrapper function for \code{power_search}.
