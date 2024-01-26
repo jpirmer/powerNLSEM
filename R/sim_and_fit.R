@@ -16,7 +16,6 @@ sim_and_fit <- function(n, POI, method,
      {
           # Mplus only works with upper cases: overwrite df_POI
           df_POI <- data.frame("matchLabel" = toupper(POI))
-          lavModel_Analysis$matchLabel <- toupper(lavModel_Analysis$matchLabel)
           fit <- try(LMS(lavModel_Analysis = lavModel_Analysis, data = data,
                          data_transformations = data_transformations, prefix = prefix),
                      silent = TRUE)
