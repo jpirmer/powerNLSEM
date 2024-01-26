@@ -18,3 +18,6 @@ FSR(lavModel_Analysis, data, FSmethod = "SL", data_transformations = NULL)
 \description{
 Factor Score Regression approach
 }
+\references{
+\strong{Similar to:} Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 27}(4), 629–648. \url{https://doi.org/10.1080/10705511.2019.1664304}.
+}
