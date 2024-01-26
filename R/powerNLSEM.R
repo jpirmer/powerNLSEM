@@ -37,6 +37,8 @@ powerNLSEM <- function(model, POI,
                        verbose = TRUE, seed = NULL,
                        ...)
 {
+     call <- match.call()
+
      if(is.null(seed)) seed <- sample(1:10^9, size = 1)
      set.seed(seed)
      seeds <- sample(1:10^9, size = R)
@@ -109,6 +111,12 @@ powerNLSEM <- function(model, POI,
      }else{
           PIcentering <- "doubleMC"
      }
+     if(!is.null(dotdotdot$liberalInspection)){
+          liberalInspection <- dotdotdot$liberalInspection
+     }else{
+          liberalInspection <- FALSE
+     }
+     liberalInspection
 
      # check input ------
      if(tolower(method) == "lms")
@@ -192,6 +200,8 @@ powerNLSEM <- function(model, POI,
      rownames(Performance) <- c("Bias", "RelBias", "RWMSE")
      AveragePerformance <- rowMeans(Performance)
 
+     if(mean(out$fitOK) < .5) warning("More than half of models did not converge.\nResults are not trustworthy.\nCheck your model formulation!")
+
      ### return results ----
      t <- proc.time()-t0
      out$power <- power_aim
@@ -200,7 +210,6 @@ powerNLSEM <- function(model, POI,
      out$method <- method
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
-     out$FSmethod <- FSmethod
      out$test <- test
      out$convergenceRate <- mean(out$fitOK)
      out$Performance <- Performance
@@ -208,6 +217,7 @@ powerNLSEM <- function(model, POI,
      out$seeds <- list("seed" = seed, "sim_seeds" = seeds)
      out$model <- paste0(model, added_model_syntax, collapse = "\n")
      out$runtime <- t
+     out$call <- call
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }
