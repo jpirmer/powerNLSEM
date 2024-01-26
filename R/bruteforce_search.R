@@ -2,20 +2,21 @@
 #' @import utils
 #' @import parallel
 #' @importFrom pbapply pbsapply
-bruteforce_search <- function(POI,
+bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*10,
                               method, lavModel,
                               lavModel_Analysis,
                               data_transformations,
+                              search_method,
                               power_modeling_method,
-                              N_start = nrow(lavModel_Analysis)*10,
                               R = 1000,
                               power_aim = .8, alpha = .05,
-                              lb = nrow(lavModel_Analysis),
-                              CORES,
-                              verbose = TRUE,
-                              Ns = NULL,
+                              lb = nrow(lavModel),
+                              CORES, verbose = TRUE,
                               uncertainty_method = "",
                               FSmethod = "SL",
+                              matchPI =TRUE,
+                              PIcentering = "doubleMC",
+                              liberalInspection = FALSE,
                               seeds,
                               test = "onesided",
                               ...)
@@ -23,8 +24,6 @@ bruteforce_search <- function(POI,
      i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
      sim_seeds <- seeds
      Reps <- get_Reps(type = type, R = R, steps = steps)
-     # Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
-     # Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
      Rel_tol <- 2
      Power_interval <- .1
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
@@ -44,7 +43,7 @@ bruteforce_search <- function(POI,
                Ns <- sample(x = Ns, size = R, replace = TRUE)
           }
      }; Nl <- min(Ns); Nu <- max(Ns); Nnew <- round(mean(Ns));  Ns <- sort(Ns, decreasing = TRUE)
-
+     Nall <- Ns
 
      if(verbose) cat(paste0("Initiating brute force search to find simulation based N for power of ",
                             power_aim, " within ",
@@ -53,8 +52,18 @@ bruteforce_search <- function(POI,
                             " models with Ns in [", Nl, ", ", Nu,"].\n"))
 
 
-     # simulate data,  fit models and evaluate significance of parameters of interest ----
-     df <- c()
+
+     df_POI <- data.frame("matchLabel" = POI)
+     fit_temp <- lavModel_Analysis[lavModel_Analysis$matchLabel %in% df_POI$matchLabel,,drop = FALSE]
+     # sort by POI
+     fit_temp <- merge(df_POI, fit_temp, by.x = "matchLabel", sort = FALSE)
+     truth <- fit_temp$ustart; names(truth) <- POI
+
+     Nfinal <- c(); Nnew <- N_start; df <- c()
+     df_est <- c(); df_se <- c(); df_pvalue_onesided <- c(); df_pvalue_twosided <- c()
+     df_sigs_onesided <- c(); df_sigs_twosided <- c(); vec_fitOK <- c()
+
+     # simulate data,  fit models and evaluate significance of parameters of interest
      lavModel_attributes <- lavaan::lav_partable_attributes(lavModel)
      matrices <- get_matrices(lavModel, lavModel_attributes)
 
@@ -74,15 +83,46 @@ bruteforce_search <- function(POI,
                                                                                    data_transformations = data_transformations,
                                                                                    prefix = ni,
                                                                                    FSmethod = FSmethod,
+                                                                                   matchPI = matchPI,
+                                                                                   PIcentering = PIcentering,
+                                                                                   liberalInspection = liberalInspection,
                                                                                    sim_seed = sim_seeds[ni]),
-                                 simplify = TRUE) |> t()
+                                 simplify = FALSE)
      if(CORES > 1L) parallel::stopCluster(cl)
 
-     Sigs <- data.frame(Fitted, Ns); names(Sigs) <- c(colnames(Fitted), "Ns")
+     sim_seeds <- sim_seeds[-c(1:length(Ns))] # delete used seeds
 
-     df <- rbind(df, Sigs); rm(Ns)
+     if(length(POI) == 1L)
+     {
+          temp_est <- sapply(Fitted, "[[", "est")
+          temp_est <- as.matrix(temp_est)
+          colnames(temp_est) <- POI; rownames(temp_est) <- NULL
+          temp_se <- sapply(Fitted, "[[", "se")
+          temp_se <- as.matrix(temp_se)
+          colnames(temp_se) <- POI; rownames(temp_se) <- NULL
+     }else{
+          df_est <- rbind(df_est, t(sapply(Fitted, "[[", "est")))
+          df_se <- rbind(df_se, t(sapply(Fitted, "[[", "se")))
+     }
+     vec_fitOK <- c(vec_fitOK, sapply(Fitted, "[[", "fitOK"))
 
+     # compute p-values
+     if(tolower(test) == "onesided")
+     {
+          trueMatrix <- matrix(rep(truth, each = nrow(df_est)),
+                               ncol = length(POI))
+          pvalue <- pnorm(sign(trueMatrix)*as.matrix(df_est / df_se),
+                          lower.tail = FALSE)
+     }else if(tolower(test) == "twosided")
+     {
+          pvalue <- 2*pnorm(as.matrix(abs(df_est) / df_se),
+                            lower.tail = FALSE)
+     }
+     df <- data.frame(pvalue < alpha); df$Ns <- Nall
+     df <- df[vec_fitOK, ]; names(df) <- c(POI, "Ns")
      ind_min <- which.min(colMeans(df, na.rm = TRUE))# find POI of lowest power
+     relFreq_indMin <- mean(unlist(tail(df[, ind_min], n = length(Ns))),
+                            na.rm = TRUE)
 
      ### run power model
      args <- names(formals(fit_power_model))
@@ -92,11 +132,17 @@ bruteforce_search <- function(POI,
      {
           N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
      }
-     Nnew <- N_temp$Nnew
+     Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
+     Nfinal <- c(Nfinal, Nnew)
 
-     # return ----
-     out <- list("N" = Nnew, SigDecisions = df,
-                 "N_trials" = Nnew)
+     df_est <- data.frame(df_est); names(df_est) <- POI
+     df_se <- data.frame(df_se); names(df_se) <- POI
+
+     out <- list("N" = Nnew,
+            "N_trials" = Nfinal,
+            "est" = df_est, "se" = df_se,
+            "Ns" = Nall, "fitOK" = vec_fitOK,
+            "truth" = truth)
 
      return(out)
 }
