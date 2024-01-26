@@ -1,4 +1,7 @@
 #' Search function to find N for desired power
+#' @description
+#' The function that initializes the search process. The \code{powerNLSEM} function actually is a wrapper function for \code{power_search}.
+#'
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
 #' @param method Method used to fit to the data. Can be LMS or UPI.
 #' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.
@@ -19,6 +22,8 @@
 #' @param lb Lower bound of N used in search. Default to \code{nrow(lavModel)}
 #' @param switchStep Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}
 #' @param uncertainty_method Uncertainty method used for confidence intervals. Default to \code{""}
+#' @param matchPI Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products.
+#' @param PIcentering String indicating which method of centering should be used when constructing product indicators. String is converted to the arguments \code{meanC}, \code{doubleMC}, and \code{residualMC}, of the \code{semTools::indProd} function. Default to \code{"doubleMC"} for double mean centering the resulting products (Lin et. al., 2010). Use \code{"meanC"} for mean centering the main effect indicator before making the products or \code{"residualC"} for residual centering the products by the main effect indicators (Little, Bovaird, & Widaman, 2006). \code{"none"} or any other input than the previously described results in no centering (use with caution!).
 #' @param FSmethod Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.
 #' @param seeds Seeds for reproducibility.
 #' @export

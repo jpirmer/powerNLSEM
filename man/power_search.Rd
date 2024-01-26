@@ -73,7 +73,11 @@ power_search(
 \item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.}
 
 \item{seeds}{Seeds for reproducibility.}
+
+\item{matchPI}{Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products.}
+
+\item{PIcentering}{String indicating which method of centering should be used when constructing product indicators. String is converted to the arguments \code{meanC}, \code{doubleMC}, and \code{residualMC}, of the \code{semTools::indProd} function. Default to \code{"doubleMC"} for double mean centering the resulting products (Lin et. al., 2010). Use \code{"meanC"} for mean centering the main effect indicator before making the products or \code{"residualC"} for residual centering the products by the main effect indicators (Little, Bovaird, & Widaman, 2006). \code{"none"} or any other input than the previously described results in no centering (use with caution!).}
 }
 \description{
-Search function to find N for desired power
+The function that initializes the search process. The \code{powerNLSEM} function actually is a wrapper function for \code{power_search}.
 }
