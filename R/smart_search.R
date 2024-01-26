@@ -76,7 +76,7 @@ smart_search <- function(POI,
 
           sim_seeds <- sim_seeds[-c(1:length(Ns))] # delete used seeds
 
-          if(length(POI) == 1)
+          if(length(POI) == 1L)
           {
                temp_est <- sapply(Fitted, "[[", "est")
                temp_est <- as.matrix(temp_est)
@@ -93,13 +93,17 @@ smart_search <- function(POI,
           # compute p-values
           if(tolower(test) == "onesided")
           {
-               trueMatrix <- matrix(rep(truth, each = length(Nall)), ncol = length(POI))
-               pvalue <- pnorm(sign(trueMatrix)*df_est / df_se, lower.tail = FALSE)
+               trueMatrix <- matrix(rep(truth, each = nrow(df_est)),
+                                    ncol = length(POI))
+               pvalue <- pnorm(sign(trueMatrix)*as.matrix(df_est / df_se),
+                               lower.tail = FALSE)
           }else if(tolower(test) == "twosided")
           {
-               pvalue <- 2*pnorm(abs(df_est) / df_se, lower.tail = FALSE)
+               pvalue <- 2*pnorm(as.matrix(abs(df_est) / df_se),
+                                 lower.tail = FALSE)
           }
-          df <- data.frame(pvalue[vec_fitOK, ] < alpha); df$Ns <- Nall
+          df <- data.frame(pvalue < alpha); df$Ns <- Nall
+          df <- df[vec_fitOK, ]; names(df) <- c(POI, "Ns")
           ind_min <- which.min(colMeans(df, na.rm = TRUE))# find POI of lowest power
           relFreq_indMin <- mean(unlist(tail(df[, ind_min], n = length(Ns))),
                                  na.rm = TRUE)
