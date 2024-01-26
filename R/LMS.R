@@ -10,6 +10,7 @@
 #' @importFrom stringr str_replace_all
 #' @importFrom MplusAutomation runModels
 #' @importFrom MplusAutomation readModels
+#' @references Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. _Psychometrika, 65_(4), 457–474. <https://doi.org/10.1007/BF02296338>
 #' @export
 
 
