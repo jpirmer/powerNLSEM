@@ -15,7 +15,14 @@
 #' @param verbose Logical whether progress should be printed in console. Default to \code{TRUE}.
 #' @param seed Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.
 #' @param ... Additional arguments passed on to the search functions.
+#' @seealso For further details for specific uses see corresponding functions: [power_search()] for all inputs possible, [UPI()] for specifics for the unconstrained product indicator approach, [LMS()] for the latent moderated structured equations approach, [FSR()] for factor score approaches, [SR()] for scale regression approaches.
 #' @returns Returns an list object of class \code{powerNLSEM}.
+#' @references Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. _Psychometrika, 65_(4), 457–474. <https://doi.org/10.1007/BF02296338>
+#' @references Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. _Review of Psychology, 16_(2), 123–132.
+#' @references Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. _Structural Equation Modeling, 17_(3), 374–391. <https://doi.org/10.1080/10705511.2010.488999>
+#' @references Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. _Structural Equation Modeling, 13_(4), 497–519. <https://doi.org/10.1207/s15328007sem1304_1>
+#' @references Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. _Psychological Methods, 9_(3), 275–300. <https://doi.org/10.1037/1082-989X.9.3.275>
+#' @references Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. _Structural Equation Modeling: A Multidisciplinary Journal, 27_(4), 629–648. <https://doi.org/10.1080/10705511.2019.1664304>.
 #' @export
 
 powerNLSEM <- function(model, POI,
@@ -93,6 +100,56 @@ powerNLSEM <- function(model, POI,
           FSmethod <- "SL"
      }
 
+     # check input ------
+     if(tolower(method) == "lms")
+     {
+          temp <- try(MplusAutomation::detectMplus)
+          if(inherits(temp, "try-error")) stop("LMS needs the installation of the external software Mplus.")
+     }
+     # check cross-relations
+     temp <- lavModel[lavModel$op == "=~",]
+     tempList <- lapply(unique(temp$lhs), FUN = function(x) temp[temp$lhs == x, ]$rhs)
+     crossloadings <- FALSE
+     for(i in 1:(length(tempList)-1))
+     {
+          mani1 <- tempList[[i]]
+          if(any(sapply(tempList[-i], FUN = function(x) any(mani1 %in% x)))){
+               crossloadings <- TRUE
+          }
+     }
+     if(crossloadings)
+     {
+          if(tolower(method) == "sr") warning("Cross-loadings influence the construction of scale scores.\nReconsider model!")
+          if(tolower(method) == "upi") warning("Cross-loadings influence the construction of product indicators. There is not much research on this!\nReconsider model!")
+          if(tolower(method) == "fsr") stop("Cross-loadings influence the construction of factor scores.\nCurrently implemented version of FSR() constructs factor scores latent-variable-wise, hence, cross-loadings are not taken into account, correctly.\nReconsider model!")
+     }
+
+     # residual covariances
+     temp <- lavModel[lavModel$mat == "theta",]
+     ResidCovMat <- matrix(FALSE, nrow = max(c(temp$row, temp$col)),
+                           ncol = max(c(temp$row, temp$col)))
+     for(i in 1:nrow(temp))
+     {
+          ResidCovMat[temp$row[i], temp$col[i]] <- ResidCovMat[temp$col[i], temp$row[i]] <- TRUE
+     }
+     diag(ResidCovMat) <- FALSE
+     if(any(ResidCovMat))
+     {
+          if(tolower(method) == "sr") warning("Residual correlation influences the construction of scale scores.\nReconsider model!")
+          if(tolower(method) == "upi") stop("Residual correlation influences the construction of product indicators.\nCurrently implemented version of UPI() does not handle residual correlations, yet!\nReconsider model!")
+          if(tolower(method) == "fsr") stop("Residual correlation influences the construction of factor scores.\nCurrently implemented version of FSR() constructs factor scores latent-variable-wise, hence, cross-correlations are not taken into account, correctly.\nReconsider model!")
+     }
+
+     # labels and parameter constraints
+     if(any(lavModel$op == ":=") | any(lavModel$label != ""))
+     {
+          stop("Labels and parameter constrains are not implemented (yet).\nPlease reconsider your model!\nPower is expected to be smaller for more parameters, hence, the neglection of paramter constrains should be more conservative.")
+     }
+
+     # multiple groups
+     if(any(lavModel$group != 1L)) stop("Multiple group analysis has not been implemented yet for any method!")
+
+     ### begin ------
      POI <- stringr::str_replace_all(string = POI, pattern = " ", replacement = "")
 
      args <- names(formals(power_search))
