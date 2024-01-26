@@ -61,6 +61,9 @@ SR <- function(lavModel_Analysis, data,
      model <- getModel(lavModel_structural_SR)
      fitSR <- suppressWarnings(lavaan::sem(model = model, data = data_transformed,
                                            se = "robust"))
+     if(!(lav_object_post_check(fitSR) & fitSR@optim$converged)){
+          stop("Error: Mean Scores Regression could not be computed.")
+     }
      Parameters <- lavaan::parameterEstimates(fitSR)
      Parameters <- Parameters[,1:5]
      Parameters$matchLabel <- apply(Parameters[, 1:3], 1, function(x) paste(x, collapse = ""))
