@@ -9,6 +9,7 @@ sim_and_fit <- function(n, POI, method,
                         FSmethod = "SL",
                         matchPI =TRUE,
                         PIcentering = "doubleMC",
+                        liberalInspection = FALSE,
                         ...){
      set.seed(sim_seed); df_POI <- data.frame("matchLabel" = POI)
      data <- simulateNLSEM(n = n, lavModel = lavModel,
@@ -28,9 +29,11 @@ sim_and_fit <- function(n, POI, method,
           fit <- try(FSR(lavModel_Analysis = lavModel_Analysis, data = data,
                         data_transformations = data_transformations,
                         FSmethod = FSmethod), silent = TRUE)
-     }else if(tolower(method) %in% c("upi", "pi", "prodcuctindicator")){
+     }else if(tolower(method) %in% c("upi", "pi", "prodcuctindicator", "sem")){
           fit <- try(UPI(lavModel_Analysis = lavModel_Analysis, data = data,
-                         data_transformations = data_transformations),
+                         data_transformations = data_transformations,
+                         matchPI = matchPI, PIcentering = PIcentering,
+                         liberalInspection = liberalInspection),
                      silent = TRUE)
      }
      if(!inherits(fit, "try-error"))

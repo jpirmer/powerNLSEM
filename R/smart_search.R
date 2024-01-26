@@ -18,6 +18,7 @@ smart_search <- function(POI,
                          FSmethod = "SL",
                          matchPI =TRUE,
                          PIcentering = "doubleMC",
+                         liberalInspection = FALSE,
                          seeds,
                          test = "onesided",
                          ...)
@@ -72,6 +73,9 @@ smart_search <- function(POI,
                                                                                         data_transformations = data_transformations,
                                                                                         prefix = ni,
                                                                                         FSmethod = FSmethod,
+                                                                                        matchPI = matchPI,
+                                                                                        PIcentering = PIcentering,
+                                                                                        liberalInspection = liberalInspection,
                                                                                         sim_seed = sim_seeds[ni]),
                                       simplify = FALSE)
           if(CORES > 1L) parallel::stopCluster(cl)
