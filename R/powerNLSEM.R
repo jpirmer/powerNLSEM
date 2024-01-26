@@ -112,12 +112,13 @@ powerNLSEM <- function(model, POI,
                             ncol = length(POI))
      Bias <- (out$est - TruthMat)[out$fitOK, ]
      RelBias <- Bias / TruthMat[out$fitOK, ]
-     AvgWeightedBias <- t(as.matrix(Bias)) %*% as.matrix(out$Ns[out$fitOK]) /
-          sum(out$Ns[out$fitOK])
-     AvgWeightedRelBias <- t(as.matrix(RelBias)) %*% as.matrix(out$Ns[out$fitOK]) /
-          sum(out$Ns[out$fitOK])
-     AvgWeightedRWMSE <- sqrt(t(as.matrix(Bias^2)) %*% as.matrix(out$Ns[out$fitOK]) /
-                                  sum(out$Ns[out$fitOK]))
+     Ns <- out$Ns[out$fitOK]
+     AvgWeightedBias <- t(as.matrix(Bias)) %*% as.matrix(Ns) /
+          sum(Ns)
+     AvgWeightedRelBias <- t(as.matrix(RelBias)) %*% as.matrix(Ns) /
+          sum(Ns)
+     AvgWeightedRWMSE <- sqrt(t(as.matrix(Bias^2)) %*% as.matrix(Ns) /
+                                  sum(Ns))
 
      Performance <- data.frame(rbind(t(AvgWeightedBias),
                                      t(AvgWeightedRelBias), t(AvgWeightedRWMSE)))
