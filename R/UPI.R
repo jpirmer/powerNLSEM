@@ -3,7 +3,7 @@
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
 #' @param data_transformations Data transformations
-#' @param matchPI Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products.
+#' @param matchPI Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products. Default to \code{TRUE}.
 #' @param PIcentering String indicating which method of centering should be used when constructing product indicators. String is converted to the arguments \code{meanC}, \code{doubleMC}, and \code{residualMC}, of the \code{semTools::indProd} function. Default to \code{"doubleMC"} for double mean centering the resulting products (Lin et. al., 2010). Use \code{"meanC"} for mean centering the main effect indicator before making the products or \code{"residualC"} for residual centering the products by the main effect indicators (Little, Bovaird, & Widaman, 2006). \code{"none"} or any other input than the previously described results in no centering (use with caution!).
 #' @references Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. Review of Psychology, 16(2), 123–132.
 #' @references Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. Structural Equation Modeling, 17(3), 374–391. <https://doi.org/10.1080/10705511.2010.488999>
