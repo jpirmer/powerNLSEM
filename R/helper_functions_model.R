@@ -69,9 +69,11 @@ check_model <- function(lavModel)
      if(max_string_length>3) warning(paste0("Consider shorter names, especially when using Mplus to fit models.\n",
                                             "Longest name length = ", max_string_length, "."))
 
-     if(any(grepl(pattern = "_l", unique(c(lavModel$rhs,
-                                          lavModel$lhs))))) stop("Do not use '_l' within variable names as this is reserved\nfor manifest variables treated as latent variables.")
+     if(any(grepl(pattern = "..l", unique(c(lavModel$rhs,
+                                          lavModel$lhs))))) stop("Do not use '..l' within variable names as this is reserved\nfor manifest variables treated as latent variables.")
 
+     if(any(grepl(pattern = "_", unique(c(lavModel$rhs,
+                                           lavModel$lhs))))) stop("Do not use '_' within variable names as this is reserved within the powerNLSEM package.")
 
      # rename higher order terms (quadratic ones)
      lavModel_attributes <- lavaan::lav_partable_attributes(lavModel)
@@ -444,15 +446,18 @@ add_manifests_as_latent <- function(manifest_po, lavModel_Analysis)
      for(man in manifest_po)
      {
           # replace manifest by latent
-          lavModel_Analysis$lhs <- stringr::str_replace_all(string = lavModel_Analysis$lhs, pattern = man, replacement = paste0(man, "_l"))
-          lavModel_Analysis$rhs <- stringr::str_replace_all(string = lavModel_Analysis$rhs, pattern = man, replacement = paste0(man, "_l"))
+          lavModel_Analysis$lhs <- stringr::str_replace_all(string = lavModel_Analysis$lhs,
+                                                            pattern = man, replacement = paste0(man, "..l"))
+          lavModel_Analysis$rhs <- stringr::str_replace_all(string = lavModel_Analysis$rhs,
+                                                            pattern = man, replacement = paste0(man, "..l"))
 
      }
-     temp_model <- paste(sapply(manifest_po, function(man) paste0(man, "_l =~ ", "1*",man, "\n", man, "~~0.001*",man)),
+     temp_model <- paste(sapply(manifest_po, function(man) paste0(man, "..l =~ ", "1*",man, "\n", man, "~~0.001*",man)),
                          sep = "", collapse = "\n")
-     temp_lavModel <- lavaan::lavMatrixRepresentation(lavaan::lavaanify(model = temp_model, meanstructure = TRUE,auto.var = TRUE,
-                                                                         auto.cov.lv.x = TRUE, auto.cov.y = TRUE,
-                                                                         as.data.frame. = TRUE))
+     temp_lavModel <- lavaan::lavMatrixRepresentation(lavaan::lavaanify(model = temp_model, meanstructure = TRUE,
+                                                                        auto.var = TRUE,
+                                                                        auto.cov.lv.x = TRUE, auto.cov.y = TRUE,
+                                                                        as.data.frame. = TRUE))
      temp_lavModel <- add_varType(temp_lavModel)
      temp_lavModel <- temp_lavModel[temp_lavModel$op != "~1" & !is.na(temp_lavModel$ustart),, drop = FALSE]
      temp_lavModel$row <- temp_lavModel$col <- temp_lavModel$plabel <- NA
@@ -517,7 +522,7 @@ add_covariances_to_lavModel <- function(lavModel_Analysis)
                temp_lavModel$row <- temp_lavModel$col <- temp_lavModel$plabel <- NA
                temp_lavModel$fixed <- FALSE
                temp_lavModel$id <- (nrow(lavModel_Analysis)+1):(nrow(lavModel_Analysis)+nrow(temp_lavModel))
-               temp_lavModel$start <- temp_lavModel$ustart <- ""
+               temp_lavModel$start <- temp_lavModel$ustart <- NA
                lavModel_Analysis <- rbind(lavModel_Analysis, temp_lavModel)
           }
      }
@@ -605,7 +610,7 @@ handle_manifests <- function(lavModel, treat_manifest_as_latent = "all")
                lavModel_Analysis$RHSvarType[lavModel_Analysis$rhs == data_transformations$oldname[i]] <- "obs"
                lavModel_Analysis$LHSvarType[lavModel_Analysis$lhs == data_transformations$oldname[i]] <- "obs"
                lavModel_Analysis$ustart[lavModel_Analysis$lhs == data_transformations$oldname[i] & lavModel_Analysis$op == "~1"] <-
-                    lavModel_Analysis$start[lavModel_Analysis$lhs == data_transformations$oldname[i] & lavModel_Analysis$op == "~1"] <- ""
+                    lavModel_Analysis$start[lavModel_Analysis$lhs == data_transformations$oldname[i] & lavModel_Analysis$op == "~1"] <- NA
 
                lavModel_Analysis$rhs[lavModel_Analysis$rhs == data_transformations$oldname[i]] <- data_transformations$newname[i]
                lavModel_Analysis$lhs[lavModel_Analysis$lhs == data_transformations$oldname[i]] <- data_transformations$newname[i]
