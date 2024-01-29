@@ -4,7 +4,7 @@
 #' @importFrom stringr str_replace_all
 #' @param model Model in lavaan syntax. See documentation for help and examples.
 #' @param POI Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.
-#' @param method Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).
+#' @param method Method used to fit to the data. Implemented methods are \code{"LMS"} (Klein & Moosbrugger, 2000) (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge), \code{"UPI"} (Kelava & Brandt, 2009, Marsh et al., 2004) for the unconstrained product indicator approach, \code{"FSR"} (Ng and Chan, 2020) for the naïve factor score approach, and \code{"SR"}, for using scale means (i.e., scale regression/path modeling).
 #' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.
 #' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
 #' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
@@ -54,9 +54,10 @@ powerNLSEM <- function(model, POI,
      Manifests <- handle_manifests(lavModel = lavModel, treat_manifest_as_latent = "ov")
      lavModel_Analysis <- Manifests$lavModel_Analysis
      data_transformations <- Manifests$data_transformations
-     lavModel_Analysis$matchLabel <- paste0(lavModel_Analysis$lhs,
+     lavModel_Analysis$matchLabel <- stringr::str_replace_all(paste0(lavModel_Analysis$lhs,
                                              lavModel_Analysis$op,
-                                             lavModel_Analysis$rhs)
+                                             lavModel_Analysis$rhs), pattern = "_", replacement = ":")
+
 
      ### initialize ----
      dotdotdot <- list(...)
@@ -116,9 +117,28 @@ powerNLSEM <- function(model, POI,
      }else{
           liberalInspection <- FALSE
      }
-     liberalInspection
 
      # check input ------
+     # check plausibility of input
+     if(!(tolower(method) %in% c("lms", "upi", "sem", "fsr", "factorscores", "sr", "reg")))
+          stop("Wrong input in 'method', should be 'LMS', 'UPI', 'SEM', 'FSR', or 'SR'.")
+     if(!(tolower(test) %in% c("onesided", "twosided")))
+          stop("Wrong input in 'test', should be 'onesided' or 'twosided'.")
+     if(!(tolower(power_modeling_method) %in% c("probit", "wald", "logit")))
+          stop("Wrong input in 'power_modeling_method', should be 'probit', 'wald', or 'logit'.")
+     if(!(tolower(search_method) %in% c("smart", "bruteforce")))
+          stop("Wrong input in 'test', should be 'smart' or 'bruteforce'.")
+     if(R<0 | round(R) != R) stop("'R' needs to a natural number.")
+     if(power_aim >= 1 | power_aim <= 0) stop("'power_aim' needs to be within (0, 1).")
+     if(alpha >= 1 | alpha <= 0) stop("'alpha' needs to be within (0, 1).")
+
+
+     # check model and modeling approaches
+     if(!("=~"  %in% lavModel$op)){
+          if(!(tolower(method) %in% c("upi", "sem"))){
+               warning("No latent variables present in model, advised to use method = 'sem' (or method = 'UPI', as they are identical).")
+          }
+     }
      if(tolower(method) == "lms")
      {
           temp <- try(MplusAutomation::detectMplus)
@@ -126,37 +146,41 @@ powerNLSEM <- function(model, POI,
      }
      # check cross-relations
      temp <- lavModel[lavModel$op == "=~",]
-     tempList <- lapply(unique(temp$lhs), FUN = function(x) temp[temp$lhs == x, ]$rhs)
-     crossloadings <- FALSE
-     for(i in 1:(length(tempList)-1))
+     if(nrow(temp) > 0L)
      {
-          mani1 <- tempList[[i]]
-          if(any(sapply(tempList[-i], FUN = function(x) any(mani1 %in% x)))){
-               crossloadings <- TRUE
+          tempList <- lapply(unique(temp$lhs), FUN = function(x) temp[temp$lhs == x, ]$rhs)
+          crossloadings <- FALSE
+          for(i in 1:(length(tempList)-1))
+          {
+               mani1 <- tempList[[i]]
+               if(any(sapply(tempList[-i], FUN = function(x) any(mani1 %in% x)))){
+                    crossloadings <- TRUE
+               }
+          }
+          if(crossloadings)
+          {
+               if(tolower(method) == "sr") warning("Cross-loadings influence the construction of scale scores.\nReconsider model!")
+               if(tolower(method) == "upi") warning("Cross-loadings influence the construction of product indicators. There is not much research on this!\nReconsider model!")
+               if(tolower(method) == "fsr") stop("Cross-loadings influence the construction of factor scores.\nCurrently implemented version of FSR() constructs factor scores latent-variable-wise, hence, cross-loadings are not taken into account, correctly.\nReconsider model!")
+          }
+
+          # residual covariances
+          temp <- lavModel[lavModel$mat == "theta",]
+          ResidCovMat <- matrix(FALSE, nrow = max(c(temp$row, temp$col)),
+                                ncol = max(c(temp$row, temp$col)))
+          for(i in 1:nrow(temp))
+          {
+               ResidCovMat[temp$row[i], temp$col[i]] <- ResidCovMat[temp$col[i], temp$row[i]] <- TRUE
+          }
+          diag(ResidCovMat) <- FALSE
+          if(any(ResidCovMat))
+          {
+               if(tolower(method) == "sr") warning("Residual correlation influences the construction of scale scores.\nReconsider model!")
+               if(tolower(method) == "upi") stop("Residual correlation influences the construction of product indicators.\nCurrently implemented version of UPI() does not handle residual correlations, yet!\nReconsider model!")
+               if(tolower(method) == "fsr") stop("Residual correlation influences the construction of factor scores.\nCurrently implemented version of FSR() constructs factor scores latent-variable-wise, hence, cross-correlations are not taken into account, correctly.\nReconsider model!")
           }
      }
-     if(crossloadings)
-     {
-          if(tolower(method) == "sr") warning("Cross-loadings influence the construction of scale scores.\nReconsider model!")
-          if(tolower(method) == "upi") warning("Cross-loadings influence the construction of product indicators. There is not much research on this!\nReconsider model!")
-          if(tolower(method) == "fsr") stop("Cross-loadings influence the construction of factor scores.\nCurrently implemented version of FSR() constructs factor scores latent-variable-wise, hence, cross-loadings are not taken into account, correctly.\nReconsider model!")
-     }
 
-     # residual covariances
-     temp <- lavModel[lavModel$mat == "theta",]
-     ResidCovMat <- matrix(FALSE, nrow = max(c(temp$row, temp$col)),
-                           ncol = max(c(temp$row, temp$col)))
-     for(i in 1:nrow(temp))
-     {
-          ResidCovMat[temp$row[i], temp$col[i]] <- ResidCovMat[temp$col[i], temp$row[i]] <- TRUE
-     }
-     diag(ResidCovMat) <- FALSE
-     if(any(ResidCovMat))
-     {
-          if(tolower(method) == "sr") warning("Residual correlation influences the construction of scale scores.\nReconsider model!")
-          if(tolower(method) == "upi") stop("Residual correlation influences the construction of product indicators.\nCurrently implemented version of UPI() does not handle residual correlations, yet!\nReconsider model!")
-          if(tolower(method) == "fsr") stop("Residual correlation influences the construction of factor scores.\nCurrently implemented version of FSR() constructs factor scores latent-variable-wise, hence, cross-correlations are not taken into account, correctly.\nReconsider model!")
-     }
 
      # labels and parameter constraints
      if(any(lavModel$op == ":=") | any(lavModel$label != ""))
@@ -166,6 +190,17 @@ powerNLSEM <- function(model, POI,
 
      # multiple groups
      if(any(lavModel$group != 1L)) stop("Multiple group analysis has not been implemented yet for any method!")
+
+     # check input with regard to power modeling
+     if(!(tolower(power_modeling_method) %in% c("probit", "wald"))) warning("Probit and/or Wald are the theoretical link between sqrt(n) and power.")
+     if(test == "twosided"){
+          if(power_modeling_method == "probit") warning("Probit can be used with test = 'twosided', but power_modeling_method = 'Wald' is adviced.")
+          if(power_modeling_method == "logit") warning("Logit should NOT be used with test = 'twosided', but power_modeling_method = 'Wald' is adviced.")
+     }
+     if(test == "onesided"){
+          if(power_modeling_method == "wald") warning("Wald can be used with test = 'onesided', but power_modeling_method = 'probit' is adviced.")
+          if(power_modeling_method == "logit") warning("Logit should NOT be used with test = 'onesided', but power_modeling_method = 'probit' is adviced.")
+     }
 
      ### begin ------
      POI <- stringr::str_replace_all(string = POI, pattern = " ", replacement = "")
@@ -192,12 +227,15 @@ powerNLSEM <- function(model, POI,
           sum(Ns)
      AvgWeightedRelBias <- t(as.matrix(RelBias)) %*% as.matrix(Ns) /
           sum(Ns)
+     AvgWeightedAbsBias <- t(as.matrix(abs(Bias))) %*% as.matrix(Ns) /
+          sum(Ns)
      AvgWeightedRWMSE <- sqrt(t(as.matrix(Bias^2)) %*% as.matrix(Ns) /
                                   sum(Ns))
 
-     Performance <- data.frame(rbind(t(AvgWeightedBias),
+     Performance <- data.frame(rbind(t(AvgWeightedBias), t(AvgWeightedAbsBias),
                                      t(AvgWeightedRelBias), t(AvgWeightedRWMSE)))
-     rownames(Performance) <- c("Bias", "RelBias", "RWMSE")
+     rownames(Performance) <- c("Bias", "absolute Bias", "relative Bias", "RWMSE")
+     colnames(Performance) <- POI
      AveragePerformance <- rowMeans(Performance)
 
      if(mean(out$fitOK) < .5) warning("More than half of models did not converge.\nResults are not trustworthy.\nCheck your model formulation!")
