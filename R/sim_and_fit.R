@@ -22,14 +22,14 @@ sim_and_fit <- function(n, POI, method,
           fit <- try(LMS(lavModel_Analysis = lavModel_Analysis, data = data,
                          data_transformations = data_transformations, prefix = prefix),
                      silent = TRUE)
-     }else if(tolower(method) %in% c("path", "regression", "scaleregression", "sr", "reg")){
+     }else if(tolower(method) %in% c("sr", "reg")){
           fit <- try(SR(lavModel_Analysis = lavModel_Analysis, data = data,
                         data_transformations = data_transformations), silent = TRUE)
-     }else if(tolower(method) %in% c("fsr", "factorscores", "fs")){
+     }else if(tolower(method) %in% c("fsr", "factorscores")){
           fit <- try(FSR(lavModel_Analysis = lavModel_Analysis, data = data,
                         data_transformations = data_transformations,
                         FSmethod = FSmethod), silent = TRUE)
-     }else if(tolower(method) %in% c("upi", "pi", "prodcuctindicator", "sem")){
+     }else if(tolower(method) %in% c("upi", "sem")){
           fit <- try(UPI(lavModel_Analysis = lavModel_Analysis, data = data,
                          data_transformations = data_transformations,
                          matchPI = matchPI, PIcentering = PIcentering,
@@ -46,7 +46,7 @@ sim_and_fit <- function(n, POI, method,
 
           if(!inherits(est/se, "try-error"))
           {
-               fitOK <- TRUE #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Probably add better check ---------------------------------------------
+               fitOK <- TRUE # if fit was not ok, functions will return NA (which will be caught below)
                if(any(is.na(se))) fitOK <- FALSE
                out <- list("est" = est, "se" = se)
 
