@@ -1,6 +1,7 @@
 #' Reanalyse powerNLSEM object
 #' @param out object of class powerNLSEM
 #' @param power_modeling_method Character indicating the power modeling method used. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} object.
+#' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{NULL}, then the same as in fitted \code{powerNLSEM} object is used.
 #' @param powerLevels Power levels for which the desired sample sizes should be computed. Needs to be a vector. Default to \code{NULL} indicating to use same power rate used in \code{powerNLSEM} object.
 #' @param alpha Alpha value used for confidence intervals. Default to \code{NULL} indicating to use same alpha used in \code{powerNLSEM} object.
 #' @param uncertainty_method Uncertainty method used for confidence intervals. Default to \code{""}
@@ -9,44 +10,99 @@
 #' @import utils
 #' @export
 
-reanalyse.powerNLSEM <- function(out, powerLevels = NULL, power_modeling_method = NULL, alpha = NULL, uncertainty_method = NULL)
+reanalyse.powerNLSEM <- function(out, test = NULL,
+                                 powerLevels = NULL, power_modeling_method = NULL,
+                                 alpha = NULL, uncertainty_method = NULL)
 {
      if(class(out)[1] != "powerNLSEM") stop("powerNLSEM object required.")
      if(is.null(powerLevels)) powerLevels <- out$power
      if(is.null(power_modeling_method)) power_modeling_method <- out$power_modeling_method
      if(is.null(alpha)) alpha <- out$alpha
      if(is.null(uncertainty_method)) uncertainty_method <- ""
+     if(is.null(test)) test <- out$call$test
      search_method <- out$search_method
      method <- out$method
 
      if(!is.vector(powerLevels)) stop("powerLevels needs to be a vector.")
 
-     Sigs <- na.omit(out$SigDecisions)
-     temp_list <- lapply(1:(ncol(Sigs)-1),
-                         FUN = function(i) {fit <- glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
-                                                                        family = binomial(link = power_modeling_method))
-                                            if((nrow(Sigs)-sum(Sigs[,i])<5) | fit$deviance < 10^-8) fit <- NULL # probably not converged
-                                            return(fit)})
-     Npower <- sapply(temp_list, function(FIT){sapply(powerLevels,
-                                                      FUN = function(powerlevel){
-                                               if(is.null(FIT)) return(NA)
-                                               N_alpha <- find_n_from_glm(fit = FIT, pow = powerlevel, alpha = alpha,
-                                               uncertainty_method = uncertainty_method, Nmax = 10^6,
-                                               power_modeling_method = "probit")
-               if(N_alpha == Inf) return(-Inf)
-               return(N_alpha)})})
-     if(length(powerLevels) == 1) Npower <- t(Npower)
-     colnames(Npower) <- colnames(Sigs[,-ncol(Sigs)])
-     rownames(Npower) <- powerLevels
+     # get significance decisions
+     if(tolower(test) == "onesided")
+     {
+          truth <- out$truth
+          trueMatrix <- matrix(rep(truth, each = nrow(out$est)),
+                               ncol = ncol(out$est))
+          pvalue <- pnorm(sign(trueMatrix)*as.matrix(out$est / out$se),
+                          lower.tail = FALSE)
+     }else if(tolower(test) == "twosided")
+     {
+          pvalue <- 2*pnorm(as.matrix(abs(out$est) / out$se),
+                            lower.tail = FALSE)
+     }
+     Sigs <- data.frame(pvalue < alpha); names(Sigs) <- names(out$est)
+     Sigs$Ns <- out$Ns
+     Sigs <- Sigs[out$fitOK, ] # remove false convergences
+     Sigs <- na.omit(Sigs)
+     ind_min <- which.min(colMeans(Sigs))
 
-     Nall <- apply(Npower, 1, function(x) max(x, na.rm = TRUE))
+     if(tolower(power_modeling_method) == "wald")
+     {
+          fit <- suppressWarnings(fitWaldglm(sig = Sigs[,ind_min],
+                                             Ns = Sigs$Ns))
+          # if Wald-GLM did not converge, retry with probit (one time)
+          if(all(is.na(fit$est))) power_modeling_method <- "probit"
+     }else{
+          fit <- glm(Sigs[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = power_modeling_method), data = Sigs)
+     }
+     if(tolower(power_modeling_method) != "wald")
+     {
+          Npower <- sapply(powerLevels,
+                           FUN = function(powerlevel){
+                                if(is.null(fit)) return(NA)
+                                N_alpha <- find_n_from_glm(fit = fit, pow = powerlevel, alpha = alpha,
+                                                           uncertainty_method = uncertainty_method, Nmax = 10^6,
+                                                           power_modeling_method = power_modeling_method)
+                                if(N_alpha == Inf) return(-Inf)
+                                return(N_alpha)})
+     }else{
+          fitWald <- fit
+          N_temp <- 1:10^5
+          df_temp_Wald <- Wald_pred_confint(fitWald, N_interest = N_temp, alpha = alpha)
+          P_LB_temp <- df_temp_Wald$P_lb
+          Npower <- sapply(X = powerLevels, function(p) min(N_temp[P_LB_temp >= p]))
+     }
+
+
+
+#
+#      temp_list <- lapply(1:(ncol(Sigs)-1),
+#                          FUN = function(i) {if(tolower(power_modeling_method) == "wald"){
+#                               fit <- fitWaldglm(sig = Sigs[,i], Ns = Sigs$Ns)
+#                               if(all(is.na(fit$est))) return(NULL)
+#                               }else{
+#                                    fit <- glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
+#                                          family = binomial(link = power_modeling_method))
+#                               if((nrow(Sigs)-sum(Sigs[,i])<5) | fit$deviance < 10^-8) fit <- NULL # probably not converged
+#                          }
+#                               return(fit)})
+#      Npower <- sapply(temp_list, function(FIT){sapply(powerLevels,
+#                                                       FUN = function(powerlevel){
+#                                                if(is.null(FIT)) return(NA)
+#                                                N_alpha <- find_n_from_glm(fit = FIT, pow = powerlevel, alpha = alpha,
+#                                                uncertainty_method = uncertainty_method, Nmax = 10^6,
+#                                                power_modeling_method = power_modeling_method)
+#                if(N_alpha == Inf) return(-Inf)
+#                return(N_alpha)})})
+#      if(length(powerLevels) == 1) Npower <- t(Npower)
+#      colnames(Npower) <- colnames(Sigs[,-ncol(Sigs)])
+#      rownames(Npower) <- powerLevels
 
      # return ----
-     out <- list("Nall" = Nall, "Npower" = Npower)
+     out <- list("Npower" = Npower)
      out$power <- powerLevels
      out$beta <- 1-out$power
      out$alpha <- alpha
      out$method <- method
+     out$test <- test
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
 

@@ -124,7 +124,6 @@ smart_search <- function(POI,
           }
           Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
 
-
           Nfinal <- c(Nfinal, Nnew)
      }
 
@@ -179,18 +178,24 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
      {
           alpha <- 1 # no influence on se
      }
-     # predict linear model
-     reg_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = TRUE)
-     # transform linear model to power (depending on the modeling method)
-     if(tolower(power_modeling_method) == "logit")
+     if(class(fit)[1] == "WaldGLM")
      {
-          power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
-          power <- exp(power_trans_lb)/(1+exp(power_trans_lb))
-     }else if(tolower(power_modeling_method) == "probit")
-     {
-          power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
-          power <- pnorm(power_trans_lb)
+          power <- Wald_pred_confint(out = fit, N_interest = N_sequence, alpha = alpha)$P_lb
+     }else{
+          # predict linear model
+          reg_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = TRUE)
+          # transform linear model to power (depending on the modeling method)
+          if(tolower(power_modeling_method) == "logit")
+          {
+               power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
+               power <- exp(power_trans_lb)/(1+exp(power_trans_lb))
+          }else if(tolower(power_modeling_method) == "probit")
+          {
+               power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
+               power <- pnorm(power_trans_lb)
+          }
      }
+
      minN <- suppressWarnings(min(N_sequence[power >= pow]))
      if(abs(minN) == Inf & Nmax == 10^6) return(Inf)
      if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
@@ -200,11 +205,19 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
 
 # fit power model
 fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
-                            power_modeling_method, df, relFreq_indMin,
+                            power_modeling_method,
+                            df, relFreq_indMin,
                             power_aim, alpha, i = 0, switchStep = Inf,
                             Conditions, uncertainty_method = "") {
      if(length(table(df$Ns)) > 1)
      {
+          if(tolower(power_modeling_method) == "wald")
+          {
+               fit <- suppressWarnings(fitWaldglm(sig = na.omit(df)[,ind_min],
+                                                  Ns = na.omit(df)$Ns))
+               # if Wald-GLM did not converge, retry with probit (one time)
+               if(all(is.na(fit$est))) power_modeling_method <- "probit"
+          }
           if(tolower(power_modeling_method) == "logit")
           {
                fit <- glm(df[,ind_min] ~ I(sqrt(Ns)), family = binomial(link = "logit"), data = df)
@@ -264,17 +277,20 @@ fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
           Nl <- round(Nu/2)
      }
 
-  N_out <- list("Nnew" = Nnew, "Nl" = Nl, "Nu_temp" = Nu)
+  N_out <- list("Nnew" = Nnew, "Nl" = Nl, "Nu" = Nu)
   return(N_out)
 }
 
 # evaluate resonablity of N
 evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
 {
-     if(any(coef(fit)[-1] < 0))
+     if(class(fit)[1] == "WaldGLM")
      {
-          N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
+          if(any(fit$est < 0)) N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
+     }else{
+          if(any(coef(fit)[-1] < 0)) N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
      }
+
 
      if(abs(N_temp - N) > rel_tol*N){
           N <- round(N + sign(N_temp - N)*rel_tol*N)
