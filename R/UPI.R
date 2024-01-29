@@ -23,9 +23,6 @@ UPI <- function(lavModel_Analysis, data,
 {
      lavModel_Analysis_UPI <- lavModel_Analysis
 
-     ## use semTools for product indicators
-     ## use MLR
-
      # transform data
      if(!is.null(data_transformations))
      {
@@ -75,10 +72,15 @@ UPI <- function(lavModel_Analysis, data,
           if(length(dupl) > 0L) return(pis[-dupl])
           return(pis)})
 
+          # remove duplicates in data
+          dataPI <- dataPI[, unlist(PIList)]
+
+          # rename latent Products
           LV_PI <- sapply(NL_lv_effects,
                  function(x) stringr::str_replace_all(string = x, pattern = ":",
                                                       replacement = "_"))
 
+          # Add possible covariances among PIs
           model_covResidPI <- ""
           if(length(PIList) > 1L)
           {
@@ -98,20 +100,23 @@ UPI <- function(lavModel_Analysis, data,
                     }
                }
           }
-          # remove duplicates in covariances
-          tempI <- stringr::str_split(model_covResidPI, " ~~ ")
-          dupl <- NULL
-          for(ii in 1:(length(tempI)-1))
+          # remove duplicates in covariances (if there are any)
+          if(length(model_covResidPI) > 1L)
           {
-               dupl <- c(dupl, ii + which(sapply(tempI[(ii+1):length(tempI)],
-                              FUN = function(x) all(tempI[[ii]] %in%  x))))
-          }
-          if(length(dupl) == 0L){
-               model_covResidPI <- paste(model_covResidPI,
-                                         collapse = "\n")
-          }else{
-               model_covResidPI <- paste(model_covResidPI[-dupl],
-                                         collapse = "\n")
+               tempI <- stringr::str_split(model_covResidPI, " ~~ ")
+               dupl <- NULL
+               for(ii in 1:(length(tempI)-1))
+               {
+                    dupl <- c(dupl, ii + which(sapply(tempI[(ii+1):length(tempI)],
+                                                      FUN = function(x) all(tempI[[ii]] %in%  x))))
+               }
+               if(length(dupl) == 0L){
+                    model_covResidPI <- paste(model_covResidPI,
+                                              collapse = "\n")
+               }else{
+                    model_covResidPI <- paste(model_covResidPI[-dupl],
+                                              collapse = "\n")
+               }
           }
 
           # generate measurement models for PIs
