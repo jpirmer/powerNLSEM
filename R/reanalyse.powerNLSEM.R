@@ -65,7 +65,7 @@ reanalyse.powerNLSEM <- function(out, test = NULL,
                                 return(N_alpha)})
      }else{
           fitWald <- fit
-          N_temp <- 1:10^5
+          N_temp <- 1:10^6
           df_temp_Wald <- Wald_pred_confint(fitWald, N_interest = N_temp, alpha = alpha)
           P_LB_temp <- df_temp_Wald$P_lb
           Npower <- sapply(X = powerLevels, function(p) min(N_temp[P_LB_temp >= p]))
