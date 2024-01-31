@@ -26,7 +26,11 @@ smart_search <- function(POI,
      dotdotdot <- list(...)
      sim_seeds <- seeds
      Reps <- get_Reps(type = type, R = R, steps = steps)
-     Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
+     if(switchStep == Inf){
+          Power_interval <- rep(0, steps)
+     }else{
+          Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
+     }
      Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
 
@@ -39,7 +43,7 @@ smart_search <- function(POI,
      Nfinal <- c(); Nnew <- N_start; df <- c()
      df_est <- c(); df_se <- c(); df_pvalue_onesided <- c(); df_pvalue_twosided <- c()
      df_sigs_onesided <- c(); df_sigs_twosided <- c(); vec_fitOK <- c()
-     Nl <- max(N_start / 2, lb); Nu <- N_start/2+N_start; Nall <- c()
+     Nl <- ceiling(max(N_start / 2, lb)); Nu <- ceiling(N_start/2+N_start); Nall <- c()
      if(verbose) cat(paste0("Initiating smart search to find simulation based N for power of ",
                             power_aim, " within ", steps, " steps\nand in total ",
                             R, " replications. Ns are drawn randomly...\n"))
