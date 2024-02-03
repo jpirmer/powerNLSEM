@@ -24,8 +24,8 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
      i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
      sim_seeds <- seeds
      Reps <- get_Reps(type = type, R = R, steps = steps)
-     Rel_tol <- 2
-     Power_interval <- .1
+     Rel_tol <- Inf
+     Power_interval <- 0
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
      dotdotdot <- list(...)
      if(is.null(Ns)){

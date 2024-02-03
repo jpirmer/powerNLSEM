@@ -117,6 +117,11 @@ powerNLSEM <- function(model, POI,
      }else{
           liberalInspection <- FALSE
      }
+     if(!is.null(dotdotdot$constrainRelChange)){
+          constrainRelChange <- dotdotdot$constrainRelChange
+     }else{
+          constrainRelChange <- TRUE
+     }
 
      # check input ------
      # check plausibility of input

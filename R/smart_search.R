@@ -13,6 +13,7 @@ smart_search <- function(POI,
                          power_aim = .8, alpha = .05,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
+                         constrainRelChange = TRUE,
                          CORES, verbose = TRUE,
                          uncertainty_method = "",
                          FSmethod = "SL",
@@ -29,9 +30,14 @@ smart_search <- function(POI,
      if(switchStep == Inf){
           Power_interval <- rep(0, steps)
      }else{
-          Power_interval <- c(rep(0,switchStep), seq(.1, .01, -(.1-.01)/(steps-switchStep-1)))
+          Power_interval <- c(rep(0,switchStep), seq(.1, .01,
+                                                     length.out = steps - switchStep))
      }
-     Rel_tol <- seq(.5, 1, (1-.5)/(steps-1))
+     if(constrainRelChange){
+          Rel_tol <- seq(.5, 1, length.out = steps)
+     }else{
+          Rel_tol <- rep(Inf, steps)
+     }
      Conditions <- data.frame(Reps, Power_interval, Rel_tol)
 
      df_POI <- data.frame("matchLabel" = POI)
@@ -184,8 +190,12 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
      }
      if(class(fit)[1] == "WaldGLM")
      {
+          if(all(is.na(fit$est))) return(NA)
           power <- Wald_pred_confint(out = fit, N_interest = N_sequence, alpha = alpha)$P_lb
      }else{
+          # did the model converge
+          if(!fit$converged) return(NA)
+
           # predict linear model
           reg_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = TRUE)
           # transform linear model to power (depending on the modeling method)
@@ -203,7 +213,9 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
      minN <- suppressWarnings(min(N_sequence[power >= pow]))
      if(abs(minN) == Inf & Nmax == 10^6) return(Inf)
      if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
-                                          uncertainty_method =  uncertainty_method, Nmax = 10^6)
+                                                  uncertainty_method =  uncertainty_method,
+                                                  power_modeling_method = power_modeling_method,
+                                                  Nmax = 10^6)
      return(minN)
 }
 
@@ -281,13 +293,16 @@ fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
           Nl <- round(Nu/2)
      }
 
-  N_out <- list("Nnew" = Nnew, "Nl" = Nl, "Nu" = Nu)
-  return(N_out)
+     N_out <- list("Nnew" = Nnew, "Nl" = Nl, "Nu" = Nu)
+     return(N_out)
 }
 
 # evaluate resonablity of N
 evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
 {
+     # handle possible non-convergence
+     if(is.na(N_temp))  N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
+
      if(class(fit)[1] == "WaldGLM")
      {
           if(any(fit$est < 0)) N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
@@ -311,3 +326,4 @@ evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
      }
      return(max(lb, N))
 }
+
