@@ -221,6 +221,7 @@ powerNLSEM <- function(model, POI,
 
      ### run power analysis ----
      out <- do.call("power_search", mget(args))
+     calledArgs <- mget(args)
 
      # examine fitting performance via weighted average Bias, Relative Bias and RWMSE
      TruthMat <- matrix(rep(out$truth, each = R),
@@ -257,10 +258,11 @@ powerNLSEM <- function(model, POI,
      out$convergenceRate <- mean(out$fitOK)
      out$Performance <- Performance
      out$AveragePerformance <- AveragePerformance
-     out$seeds <- list("seed" = seed, "sim_seeds" = seeds)
+     out$seed <- seed
      out$model <- paste0(model, added_model_syntax, collapse = "\n")
      out$runtime <- t
      out$call <- call
+     out$args <- calledArgs
      class(out) <- c("powerNLSEM", "list")
      return(out)
 }

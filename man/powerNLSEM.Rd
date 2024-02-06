@@ -25,7 +25,7 @@ powerNLSEM(
 
 \item{POI}{Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.}
 
-\item{method}{Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).}
+\item{method}{Method used to fit to the data. Implemented methods are \code{"LMS"} (Klein & Moosbrugger, 2000) (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge), \code{"UPI"} (Kelava & Brandt, 2009, Marsh et al., 2004) for the unconstrained product indicator approach, \code{"FSR"} (Ng and Chan, 2020) for the naïve factor score approach, and \code{"SR"}, for using scale means (i.e., scale regression/path modeling).}
 
 \item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.}
 
