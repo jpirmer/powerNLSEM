@@ -186,7 +186,7 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
      N_sequence <- 1:Nmax
      if(uncertainty_method == "exact")
      {
-          alpha <- 1 # no influence on se
+          alpha <- .5 # no influence on se
      }
      if(class(fit)[1] == "WaldGLM")
      {
