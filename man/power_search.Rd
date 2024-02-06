@@ -29,6 +29,7 @@ power_search(
   matchPI = TRUE,
   PIcentering = "doubleMC",
   liberalInspection = FALSE,
+  constrainRelChange = TRUE,
   seeds
 )
 }
@@ -61,15 +62,15 @@ power_search(
 
 \item{N_start}{Starting sample size. Default to \code{nrow(lavModel)*10}}
 
-\item{type}{Default to \code{"u"}.}
+\item{type}{Indicator how the samples sizes should be used in the steps of the smart algorithm: \code{"u"} for many to few to many, \code{"increasing"} for increasing replications and \code{"even"} for evenly distributed replications across steps. Default to \code{"u"}.}
 
-\item{steps}{Steps used in search_method = "smart", i.e., the smart algorithm. This is ignored if bruteforce is used. Default to 10.}
+\item{steps}{Steps used in \code{search_method = "smart"}, i.e., the smart algorithm. This is ignored if bruteforce is used. Default to 10.}
 
-\item{lb}{Lower bound of N used in search. Default to \code{nrow(lavModel)}}
+\item{lb}{Lower bound of N used in search. Default to \code{nrow(lavModel)}.}
 
-\item{switchStep}{Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}}
+\item{switchStep}{Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}. Exploration phase searches for the interval for N so that the resulting power is within \code{[.15, .85]} since the power curve is steepest at .5 and becomes less step towards plus/min \code{Inf}. Exploitation phase searches for an interval for N around the \code{power_aim} argument which shrinks from plus/minus .1 to .01. If \code{swicthStep = Inf}, then only exploration is used. If \code{switchStep} is used then the search process is reset at that point, which results in a new estimation in the bounds of the interval of N independent of the previous ones which might be restricted in change (see also argument( \code{constrainRelChange}).}
 
-\item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}}
+\item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}.}
 
 \item{FSmethod}{Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.}
 
@@ -80,6 +81,8 @@ power_search(
 \item{PIcentering}{String indicating which method of centering should be used when constructing product indicators. String is converted to the arguments \code{meanC}, \code{doubleMC}, and \code{residualMC}, of the \code{semTools::indProd} function. Default to \code{"doubleMC"} for double mean centering the resulting products (Lin et. al., 2010). Use \code{"meanC"} for mean centering the main effect indicator before making the products or \code{"residualC"} for residual centering the products by the main effect indicators (Little, Bovaird, & Widaman, 2006). \code{"none"} or any other input than the previously described results in no centering (use with caution!).}
 
 \item{liberalInspection}{Logical whether the inspection of estimation truthworthiness should be very liberal (i.e., allowing for non-positive definite Hessians in standard error estimation or non-positive residual covariance matrices or latent covariance matrices). Default to \code{FALSE}. Being liberal is not adviced and should be checked for a single data set!}
+
+\item{constrainRelChange}{Logical whether the change in the bounds of the interval for N using the smart algorithm should be constrained. This prevents divergence (which is especially an issue for small effect sizes and small \code{R}) but results in biased estimates if the number of steps is too small. Default to \code{TRUE}.}
 
 \item{seeds}{Seeds for reproducibility.}
 }
