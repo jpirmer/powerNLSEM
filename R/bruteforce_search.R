@@ -12,7 +12,7 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
                               power_aim = .8, alpha = .05,
                               lb = nrow(lavModel),
                               CORES, verbose = TRUE,
-                              uncertainty_method = "",
+                              alpha_power_modeling = .05,
                               FSmethod = "SL",
                               matchPI =TRUE,
                               PIcentering = "doubleMC",
