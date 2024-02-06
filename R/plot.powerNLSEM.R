@@ -35,7 +35,7 @@ plot.powerNLSEM <- function(x, test  = NULL,
      {
           alpha <- out$alpha
      }
-     if(is.null(test)) test <- out$call$test
+     if(is.null(test)) test <- out$test
 
      # get significance decisions
      if(tolower(test) == "onesided")
@@ -168,8 +168,8 @@ plot.powerNLSEM <- function(x, test  = NULL,
 
      }else if(tolower(plot) == "empirical")
      {
-          SUMMARY <- aggregate(.~ Ns, data = out$SigDecisions, FUN = function(x) mean(x = x, na.rm = TRUE))
-          SUMMARY$Ns_count <- as.numeric(table(out$SigDecisions$Ns))
+          SUMMARY <- aggregate(.~ Ns, data = Sigs, FUN = function(x) mean(x = x, na.rm = TRUE))
+          SUMMARY$Ns_count <- as.numeric(table(Sigs$Ns))
           NAMES <- names(SUMMARY)
           SUMMARY <- data.frame(SUMMARY)
           names(SUMMARY) <- NAMES
@@ -207,14 +207,18 @@ plot.powerNLSEM <- function(x, test  = NULL,
                        subtitle = paste0("using LOESS  for ", test, " test"))
      }
 
-     if(is.null(power_aim)){
+     if(is.null(power_aim) &
+        (test == out$test) &
+        (power_modeling_method == out$power_modeling_method) &
+        (alpha == out$alpha)){
           gg <- gg + geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = out$N, lwd = .5, lty = 3)
      }else if(all(power_aim < 1) & all(power_aim > 0))
      {
+          if(is.null(power_aim)) power_aim <- out$power
           temp <- reanalyse.powerNLSEM(out, powerLevels = power_aim, test = test,
                                power_modeling_method = power_modeling_method,
-                               alpha = alpha)
+                               alpha = alpha, uncertainty_method = uncertainty_method)
           gg <- gg + geom_hline(yintercept = temp$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = temp$Npower, lwd = .5, lty = 3)
 

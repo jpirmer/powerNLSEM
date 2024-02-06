@@ -6,6 +6,7 @@
 \usage{
 reanalyse.powerNLSEM(
   out,
+  test = NULL,
   powerLevels = NULL,
   power_modeling_method = NULL,
   alpha = NULL,
@@ -14,6 +15,8 @@ reanalyse.powerNLSEM(
 }
 \arguments{
 \item{out}{object of class powerNLSEM}
+
+\item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{NULL}, then the same as in fitted \code{powerNLSEM} object is used.}
 
 \item{powerLevels}{Power levels for which the desired sample sizes should be computed. Needs to be a vector. Default to \code{NULL} indicating to use same power rate used in \code{powerNLSEM} object.}
 
