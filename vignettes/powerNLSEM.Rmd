@@ -91,7 +91,8 @@ After stating the model, we can use the `powerNLSEM` function to use a smart sea
 ```{r, warning=FALSE,error=FALSE}
 Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method = "UPI",
                            search_method = "smart", steps = 10, power_modeling_method = "probit",
-                           R = 1000, power_aim = .8, alpha = .05, CORES = 1, verbose = T,
+                           R = 1000, power_aim = .8, alpha = .05, alpha_power_modeling = .05,
+                           CORES = 1, verbose = TRUE,
                            seed = 2023)
 ```
 
@@ -120,7 +121,7 @@ Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method
 <!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s ") -->
 <!-- ``` -->
 
-The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"UPI"`, which indicates that the unconstrained product indicator approach should be used (Marsh et al., 2004, Kelava & Brandt, 2009), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"probit"`, which means the significance decisions per parameter are modeled via a probit regression model. `R` is the total number of replications fitted (here 1000 is small, this number should be increased for higher precision, values much smaller may create unwanted behaviour of the search algorithm as the power-model might be to plane). `power_aim` is the desired power level (here 0.8) for which the smart algorithm is optimized (and for which the $N$ is found), `alpha` is the corresponding type I-error rate (level of significance, here 0.05), `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console.  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
+The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"UPI"`, which indicates that the unconstrained product indicator approach should be used (Marsh et al., 2004, Kelava & Brandt, 2009), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"probit"`, which means the significance decisions per parameter are modeled via a probit regression model. `R` is the total number of replications fitted (here 1000 is small, this number should be increased for higher precision, values much smaller may create unwanted behaviour of the search algorithm as the power-model might be to plane). `power_aim` is the desired power level (here 0.8) for which the smart algorithm is optimized (and for which the $N$ is found), `alpha` is the corresponding type I-error rate for the significance decision per replication (level of significance, here 0.05), `alpha_power_modeling` is the type I-error rate used within the power modeling process, i.e., the confidence band used to derive the lower bound of power that is then used to solve for $\hat{N}$ which further enables that  $\hat{N}$ will ensure the desired power rate with type I-error `alpha_power_modeling` divided by 2, `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console.  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
 
 The output object `Result_Power` is a list with the following objects:
 
@@ -210,7 +211,7 @@ One can also find other sample sizes for power values other than that the proces
 
 ```{r}
 reanalyse.powerNLSEM(Result_Power, 
-                     powerLevels = c(.5, .6, .7, .8, .9, .95))
+                     powerLevels = c(.5, .6, .7, .8, .9, .95, .99))
 ```
 
 These new values can also be plotted into the plot
@@ -219,10 +220,36 @@ These new values can also be plotted into the plot
  
 ```{r, fig.width=7, fig.height=5, fig.align='center'}
 plot(Result_Power, se = TRUE, 
-     power_aim = c(.5, .6, .7, .8, .9, .95))
+     power_aim = c(.5, .6, .7, .8, .9, .95, .99))
 ```
 
 were we see that some of the power values actually fall out of the support for which sample sizes had been drawn indicating that these values might be less precise.
+
+Further, if we want more precision in the power modeling process we can alter `alpha_power_modeling` to a lower value.
+
+```{r, fig.width=7, fig.height=5, fig.align='center'}
+reanalyse.powerNLSEM(Result_Power, 
+                     powerLevels = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = .001)
+
+plot(Result_Power, se = TRUE, 
+     power_aim = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = .001)
+```
+
+If we wish to not use confidence bands in the power modeling process we can use `alpha_power_modeling = 1`.
+
+```{r, fig.width=7, fig.height=5, fig.align='center'}
+reanalyse.powerNLSEM(Result_Power, 
+                     powerLevels = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = 1)
+
+plot(Result_Power, se = TRUE, 
+     power_aim = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = 1)
+```
+
+If we choose `alpha_power_modeling = 1` within the smart search algorithm using `powerNLSEM`, then the sample sizes get optimized for that value. However, this is not adviced since in approx. half of the replications (retrials of the smart algorithm or brute algorithm) the sample size will actually be smaller than that resulting in the desired power rate.
 
 ## Literature
 
