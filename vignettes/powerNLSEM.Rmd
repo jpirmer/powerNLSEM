@@ -204,6 +204,26 @@ plot(Result_Power, se = TRUE, plot = "empirical")
 plots the empirical power per sample size and fits a LOESS fit to the resulting data.
 All plots indicate that the linear effect of Z has the smallest power.
 
+### Find other sample sizes from a fitted model
+
+One can also find other sample sizes for power values other than that the process has been optimized for by using the `reanalyze.powerNlSEM` function.
+
+```{r}
+reanalyse.powerNLSEM(Result_Power, 
+                     powerLevels = c(.5, .6, .7, .8, .9, .95))
+```
+
+These new values can also be plotted into the plot
+
+
+ 
+```{r, fig.width=7, fig.height=5, fig.align='center'}
+plot(Result_Power, se = TRUE, 
+     power_aim = c(.5, .6, .7, .8, .9, .95))
+```
+
+were we see that some of the power values actually fall out of the support for which sample sizes had been drawn indicating that these values might be less precise.
+
 ## Literature
 
 Jorgensen, T. D., Pornprasertmanit, S., Schoemann, A. M., & Rosseel, Y. (2022). _`semTools`: Useful tools for structural equation modeling_. R package version 0.5-6. Retrieved from [https://CRAN.R-project.org/package=semTools](https://CRAN.R-project.org/package=semTools)
