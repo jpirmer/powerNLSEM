@@ -12,6 +12,7 @@
   se = FALSE,
   power_aim = NULL,
   alpha = NULL,
+  alpha_power_modeling = NULL,
   min_num_bins = 10,
   defaultgg = FALSE,
   ...
@@ -31,6 +32,8 @@
 \item{power_aim}{Power level to be included into the plot with respective N. If \code{NULL} the same power level as in the \code{powerNLSEM} function will be used. If set to \code{0} no power level and corresponding N will be plotted. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.}
 
 \item{alpha}{Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function. This does not influence the significance decision, although same alpha is used per default.}
+
+\item{alpha_power_modeling}{Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.}
 
 \item{min_num_bins}{minimal number of bins used for aggregating results. Default to 10.}
 

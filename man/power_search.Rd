@@ -15,6 +15,7 @@ power_search(
   R = 1000,
   power_aim = 0.8,
   alpha = 0.05,
+  alpha_power_modeling = 0.05,
   CORES,
   verbose,
   Ns = NULL,
@@ -23,7 +24,6 @@ power_search(
   steps = 10,
   lb = nrow(lavModel),
   switchStep = round(steps/2),
-  uncertainty_method = "",
   FSmethod = "SL",
   test = "onesided",
   matchPI = TRUE,
@@ -52,7 +52,9 @@ power_search(
 
 \item{power_aim}{Minimal power value to approximate. Default to .8.}
 
-\item{alpha}{Type I-error rate. Default to .05.}
+\item{alpha}{Type I-error rate for significance decision. Default to \code{.05}.}
+
+\item{alpha_power_modeling}{Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.}
 
 \item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
 
@@ -69,8 +71,6 @@ power_search(
 \item{lb}{Lower bound of N used in search. Default to \code{nrow(lavModel)}.}
 
 \item{switchStep}{Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}. Exploration phase searches for the interval for N so that the resulting power is within \code{[.15, .85]} since the power curve is steepest at .5 and becomes less step towards plus/min \code{Inf}. Exploitation phase searches for an interval for N around the \code{power_aim} argument which shrinks from plus/minus .1 to .01. If \code{swicthStep = Inf}, then only exploration is used. If \code{switchStep} is used then the search process is reset at that point, which results in a new estimation in the bounds of the interval of N independent of the previous ones which might be restricted in change (see also argument( \code{constrainRelChange}).}
-
-\item{uncertainty_method}{Uncertainty method used for confidence intervals. Default to \code{""}.}
 
 \item{FSmethod}{Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.}
 

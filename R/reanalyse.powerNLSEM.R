@@ -61,8 +61,8 @@ reanalyse.powerNLSEM <- function(out, test = NULL,
           Npower <- sapply(powerLevels,
                            FUN = function(powerlevel){
                                 if(is.null(fit)) return(NA)
-                                N_alpha <- find_n_from_glm(fit = fit, pow = powerlevel,
-                                                           uncertainty_method = uncertainty_method, Nmax = 10^6,
+                                N_alpha <- find_n_from_glm(fit = fit, pow = powerlevel, Nmax = 10^6,
+                                                           power_modeling_method = power_modeling_method,
                                                            alpha_power_modeling  = alpha_power_modeling)
                                 if(N_alpha == Inf) return(-Inf)
                                 return(N_alpha)})
@@ -92,7 +92,7 @@ reanalyse.powerNLSEM <- function(out, test = NULL,
 #                                                       FUN = function(powerlevel){
 #                                                if(is.null(FIT)) return(NA)
 #                                                N_alpha <- find_n_from_glm(fit = FIT, pow = powerlevel, alpha = alpha,
-#                                                uncertainty_method = uncertainty_method, Nmax = 10^6,
+#                                                Nmax = 10^6,
 #                                                power_modeling_method = power_modeling_method)
 #                if(N_alpha == Inf) return(-Inf)
 #                return(N_alpha)})})

@@ -14,6 +14,7 @@ powerNLSEM(
   R = 2000,
   power_aim = 0.8,
   alpha = 0.05,
+  alpha_power_modeling = 0.05,
   CORES = max(c(parallel::detectCores() - 2, 1)),
   verbose = TRUE,
   seed = NULL,
@@ -37,7 +38,9 @@ powerNLSEM(
 
 \item{power_aim}{Minimal power value to approximate. Default to \code{.8}.}
 
-\item{alpha}{Type I-error rate. Default to \code{.05}.}
+\item{alpha}{Type I-error rate for significance decision. Default to \code{.05}.}
+
+\item{alpha_power_modeling}{Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.}
 
 \item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
 
