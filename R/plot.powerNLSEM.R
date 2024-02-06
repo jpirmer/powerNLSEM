@@ -6,6 +6,7 @@
 #' @param se Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to \code{FALSE}.
 #' @param power_aim Power level to be included into the plot with respective N. If \code{NULL} the same power level as in the \code{powerNLSEM} function will be used. If set to \code{0} no power level and corresponding N will be plotted. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.
 #' @param alpha Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function. This does not influence the significance decision, although same alpha is used per default.
+#' @param alpha_power_modeling Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.
 #' @param min_num_bins minimal number of bins used for aggregating results. Default to 10.
 #' @param defaultgg Logical to return default ggplot object. Default to \code{FALSE}, which returns \code{theme_minimal} and other changes in theme.
 #' @param ... Additional arguments passed on to the plot function.
@@ -19,6 +20,7 @@ plot.powerNLSEM <- function(x, test  = NULL,
                             plot = "power_model",
                             power_modeling_method = NULL, se = FALSE,
                             power_aim = NULL, alpha = NULL,
+                            alpha_power_modeling = NULL,
                             min_num_bins = 10,
                             defaultgg = FALSE,
                             ...)
@@ -36,6 +38,7 @@ plot.powerNLSEM <- function(x, test  = NULL,
           alpha <- out$alpha
      }
      if(is.null(test)) test <- out$test
+     if(is.null(alpha_power_modeling)) alpha_power_modeling <- out$alpha_power_modeling
 
      # get significance decisions
      if(tolower(test) == "onesided")
@@ -66,8 +69,8 @@ plot.powerNLSEM <- function(x, test  = NULL,
                for(i in 1:length(temp))
                {
                     Probit <- cbind(Probit, temp[[i]]$fit)
-                    Probit_UB <- cbind(Probit_UB, temp[[i]]$fit + qnorm(1-alpha/2)*temp[[i]]$se.fit)
-                    Probit_LB <- cbind(Probit_LB, temp[[i]]$fit - qnorm(1-alpha/2)*temp[[i]]$se.fit)
+                    Probit_UB <- cbind(Probit_UB, temp[[i]]$fit + qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
+                    Probit_LB <- cbind(Probit_LB, temp[[i]]$fit - qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
                }
                powers <- pnorm(Probit)
                powers_UB <- pnorm(Probit_UB)
@@ -84,7 +87,7 @@ plot.powerNLSEM <- function(x, test  = NULL,
                }
                     WaldCI <- suppressWarnings(Wald_pred_confint(out = fitWald,
                                                                  N_interest = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE)),
-                                                                 alpha = alpha))
+                                                                 alpha = alpha_power_modeling))
                     return(WaldCI)})
                powers <- c(); powers_UB <- c(); powers_LB <- c()
                for(i in 1:length(temp))
@@ -110,8 +113,8 @@ plot.powerNLSEM <- function(x, test  = NULL,
                for(i in 1:length(temp))
                {
                     Logit <- cbind(Logit, temp[[i]]$fit)
-                    Logit_UB <- cbind(Logit_UB, temp[[i]]$fit + qnorm(1-alpha/2)*temp[[i]]$se.fit)
-                    Logit_LB <- cbind(Logit_LB, temp[[i]]$fit - qnorm(1-alpha/2)*temp[[i]]$se.fit)
+                    Logit_UB <- cbind(Logit_UB, temp[[i]]$fit + qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
+                    Logit_LB <- cbind(Logit_LB, temp[[i]]$fit - qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
                }
                powers <- exp(Logit)/(1 + exp(Logit))
                powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
@@ -201,7 +204,7 @@ plot.powerNLSEM <- function(x, test  = NULL,
                              direction = "long", v.names = c("Power"),
                              times = names(SUMMARY_agg)[names(SUMMARY_agg) != "Ns"], timevar = "Effect")
           gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect, fill = Effect))+geom_point(cex = .1)+
-               geom_smooth(method = "loess", formula = "y~x")+
+               geom_smooth(method = "loess", formula = "y~x", level = 1-alpha_power_modeling)+
                ylab("Predicted Power")+xlab("N")+
                ggtitle(paste0("Model implied power with confidence bands for ", out$method),
                        subtitle = paste0("using LOESS  for ", test, " test"))
@@ -210,7 +213,8 @@ plot.powerNLSEM <- function(x, test  = NULL,
      if(is.null(power_aim) &
         (test == out$test) &
         (power_modeling_method == out$power_modeling_method) &
-        (alpha == out$alpha)){
+        (alpha == out$alpha) &
+        (alpha_power_modeling == out$alpha_power_modeling)){
           gg <- gg + geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = out$N, lwd = .5, lty = 3)
      }else if(all(power_aim < 1) & all(power_aim > 0))
@@ -218,7 +222,7 @@ plot.powerNLSEM <- function(x, test  = NULL,
           if(is.null(power_aim)) power_aim <- out$power
           temp <- reanalyse.powerNLSEM(out, powerLevels = power_aim, test = test,
                                power_modeling_method = power_modeling_method,
-                               alpha = alpha, uncertainty_method = uncertainty_method)
+                               alpha = alpha, alpha_power_modeling = alpha_power_modeling)
           gg <- gg + geom_hline(yintercept = temp$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = temp$Npower, lwd = .5, lty = 3)
 

@@ -12,7 +12,8 @@
 #' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
 #' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime.
 #' @param power_aim Minimal power value to approximate. Default to .8.
-#' @param alpha Type I-error rate. Default to .05.
+#' @param alpha Type I-error rate for significance decision. Default to \code{.05}.
+#' @param alpha_power_modeling Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
 #' @param verbose Logical whether progress should be printed in console. Default to TRUE.
 #' @param  Ns Sample sizes used in power estimation process. Default to \code{NULL}.
@@ -22,7 +23,6 @@
 #' @param lb Lower bound of N used in search. Default to \code{nrow(lavModel)}.
 #' @param switchStep Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}. Exploration phase searches for the interval for N so that the resulting power is within \code{[.15, .85]} since the power curve is steepest at .5 and becomes less step towards plus/min \code{Inf}. Exploitation phase searches for an interval for N around the \code{power_aim} argument which shrinks from plus/minus .1 to .01. If \code{swicthStep = Inf}, then only exploration is used. If \code{switchStep} is used then the search process is reset at that point, which results in a new estimation in the bounds of the interval of N independent of the previous ones which might be restricted in change (see also argument( \code{constrainRelChange}).
 #' @param constrainRelChange Logical whether the change in the bounds of the interval for N using the smart algorithm should be constrained. This prevents divergence (which is especially an issue for small effect sizes and small \code{R}) but results in biased estimates if the number of steps is too small. Default to \code{TRUE}.
-#' @param uncertainty_method Uncertainty method used for confidence intervals. Default to \code{""}.
 #' @param matchPI Logical passed to \code{semTools::indProd} in order to compute the product indicators: Specify TRUE to use match-paired approach (Marsh, Wen, & Hau, 2004). If FALSE, the resulting products are all possible products. Default to \code{TRUE}. The observations are matched by order given when specifying the measurement model.
 #' @param PIcentering String indicating which method of centering should be used when constructing product indicators. String is converted to the arguments \code{meanC}, \code{doubleMC}, and \code{residualMC}, of the \code{semTools::indProd} function. Default to \code{"doubleMC"} for double mean centering the resulting products (Lin et. al., 2010). Use \code{"meanC"} for mean centering the main effect indicator before making the products or \code{"residualC"} for residual centering the products by the main effect indicators (Little, Bovaird, & Widaman, 2006). \code{"none"} or any other input than the previously described results in no centering (use with caution!).
 #' @param liberalInspection Logical whether the inspection of estimation truthworthiness should be very liberal (i.e., allowing for non-positive definite Hessians in standard error estimation or non-positive residual covariance matrices or latent covariance matrices). Default to \code{FALSE}. Being liberal is not adviced and should be checked for a single data set!
@@ -39,6 +39,7 @@ power_search <- function(POI,
                          R = 1000,
                          power_aim = .8,
                          alpha = .05,
+                         alpha_power_modeling = .05,
                          CORES,
                          verbose,
                          Ns = NULL,
@@ -47,7 +48,6 @@ power_search <- function(POI,
                          steps = 10,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
-                         uncertainty_method = "",
                          FSmethod = "SL",
                          test = "onesided",
                          matchPI =TRUE,

@@ -10,7 +10,8 @@
 #' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
 #' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
 #' @param power_aim Minimal power value to approximate. Default to \code{.8}.
-#' @param alpha Type I-error rate. Default to \code{.05}.
+#' @param alpha Type I-error rate for significance decision. Default to \code{.05}.
+#' @param alpha_power_modeling Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.
 #' @param CORES Number of cores used for parallelization. Default to number of available cores - 2.
 #' @param verbose Logical whether progress should be printed in console. Default to \code{TRUE}.
 #' @param seed Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.
@@ -33,6 +34,7 @@ powerNLSEM <- function(model, POI,
                        R = 2000,
                        power_aim = .8,
                        alpha = .05,
+                       alpha_power_modeling = .05,
                        CORES = max(c(parallel::detectCores()-2, 1)),
                        verbose = TRUE, seed = NULL,
                        ...)
@@ -91,11 +93,6 @@ powerNLSEM <- function(model, POI,
           type <- dotdotdot$type
      }else{
           type <- "u"
-     }
-     if(!is.null(dotdotdot$uncertainty_method)){
-          uncertainty_method <- dotdotdot$uncertainty_method
-     }else{
-          uncertainty_method <- ""
      }
      if(!is.null(dotdotdot$FSmethod)){
           FSmethod <- dotdotdot$FSmethod
@@ -251,6 +248,7 @@ powerNLSEM <- function(model, POI,
      out$power <- power_aim
      out$beta <- 1-power_aim
      out$alpha <- alpha
+     out$alpha_power_modeling <- alpha_power_modeling
      out$method <- method
      out$search_method <- search_method
      out$power_modeling_method <- power_modeling_method
