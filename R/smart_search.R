@@ -11,11 +11,11 @@ smart_search <- function(POI,
                          N_start = nrow(lavModel)*10, type = "u",
                          R = 1000, steps = 10,
                          power_aim = .8, alpha = .05,
+                         alpha_power_modeling = .05,
                          lb = nrow(lavModel),
                          switchStep = round(steps/2),
                          constrainRelChange = TRUE,
                          CORES, verbose = TRUE,
-                         uncertainty_method = "",
                          FSmethod = "SL",
                          matchPI =TRUE,
                          PIcentering = "doubleMC",
@@ -34,7 +34,7 @@ smart_search <- function(POI,
                                                      length.out = steps - switchStep))
      }
      if(constrainRelChange){
-          Rel_tol <- seq(.5, 1, length.out = steps)
+          Rel_tol <- c(seq(.5, 1, length.out = steps-1), Inf) # last step cannot be constrained!
      }else{
           Rel_tol <- rep(Inf, steps)
      }
@@ -179,41 +179,39 @@ get_Reps <- function(type = "u", R = 1000, steps = 10) {
 }
 
 # find n from an glm-fit model
-find_n_from_glm <- function(fit, pow = .8, alpha = .05,
-                            uncertainty_method = "", Nmax = 10^4,
+find_n_from_glm <- function(fit, pow = .8,
+                            alpha_power_modeling, Nmax = 10^4,
                             power_modeling_method)
 {
      N_sequence <- 1:Nmax
-     if(uncertainty_method == "exact")
-     {
-          alpha <- .5 # no influence on se
-     }
      if(class(fit)[1] == "WaldGLM")
      {
           if(all(is.na(fit$est))) return(NA)
-          power <- Wald_pred_confint(out = fit, N_interest = N_sequence, alpha = alpha)$P_lb
+          power <- Wald_pred_confint(out = fit, N_interest = N_sequence,
+                                     alpha = alpha_power_modeling)$P_lb
      }else{
           # did the model converge
           if(!fit$converged) return(NA)
 
           # predict linear model
-          reg_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence), se.fit = TRUE)
+          reg_fit <- predict(object = fit, newdata = data.frame("Ns" = N_sequence),
+                             se.fit = TRUE)
           # transform linear model to power (depending on the modeling method)
           if(tolower(power_modeling_method) == "logit")
           {
-               power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
+               power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha_power_modeling/2)*reg_fit$se.fit
                power <- exp(power_trans_lb)/(1+exp(power_trans_lb))
           }else if(tolower(power_modeling_method) == "probit")
           {
-               power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha/2)*reg_fit$se.fit
+               power_trans_lb <- reg_fit$fit - qnorm(p = 1-alpha_power_modeling/2)*reg_fit$se.fit
                power <- pnorm(power_trans_lb)
           }
      }
 
      minN <- suppressWarnings(min(N_sequence[power >= pow]))
      if(abs(minN) == Inf & Nmax == 10^6) return(Inf)
-     if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow, alpha = alpha,
-                                                  uncertainty_method =  uncertainty_method,
+     if(abs(minN) == Inf) minN <- find_n_from_glm(fit = fit, pow = pow,
+                                                  alpha_power_modeling =  alpha_power_modeling,
                                                   power_modeling_method = power_modeling_method,
                                                   Nmax = 10^6)
      return(minN)
@@ -223,8 +221,8 @@ find_n_from_glm <- function(fit, pow = .8, alpha = .05,
 fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
                             power_modeling_method,
                             df, relFreq_indMin,
-                            power_aim, alpha, i = 0, switchStep = Inf,
-                            Conditions, uncertainty_method = "") {
+                            power_aim, i = 0, switchStep = Inf,
+                            Conditions, alpha_power_modeling) {
      if(length(table(df$Ns)) > 1)
      {
           if(tolower(power_modeling_method) == "wald")
@@ -243,21 +241,21 @@ fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
           }else{
                stop("This power modeling method has not been implemented.")
           }
-          Nnew_temp <- find_n_from_glm(fit = fit, pow = power_aim, alpha = alpha,
-                                       uncertainty_method =  uncertainty_method,
+          Nnew_temp <- find_n_from_glm(fit = fit, pow = power_aim,
+                                       alpha_power_modeling =  alpha_power_modeling,
                                        power_modeling_method = power_modeling_method)
           if(i <= switchStep)
           {
-               Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha = 1, uncertainty_method =  uncertainty_method,
+               Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha_power_modeling = 1,
                                           power_modeling_method = power_modeling_method)
-               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha = alpha, uncertainty_method =  uncertainty_method,
+               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha_power_modeling = alpha_power_modeling,
                                           power_modeling_method = power_modeling_method)
           }else{
                Nl_temp <- find_n_from_glm(fit = fit, pow = max(power_aim - Conditions$Power_interval[i], .0001),
-                                          alpha = 1, uncertainty_method =  uncertainty_method,
+                                          alpha_power_modeling = 1,
                                           power_modeling_method = power_modeling_method)
                Nu_temp <- find_n_from_glm(fit = fit, pow = min(power_aim + Conditions$Power_interval[i], .9999),
-                                          alpha = alpha, uncertainty_method = uncertainty_method,
+                                          alpha_power_modeling = alpha_power_modeling,
                                           power_modeling_method = power_modeling_method)
           }
      }else{
@@ -326,4 +324,5 @@ evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
      }
      return(max(lb, N))
 }
+
 
