@@ -77,7 +77,7 @@ powerNLSEM <- function(model, POI,
      if(!is.null(dotdotdot$lb)){
           lb <- max(dotdotdot$lb, nrow(lavModel))
      }else{
-          lb <- nrow(lavModel)
+          lb <- nrow(lavModel)*5
      }
      if(!is.null(dotdotdot$steps)){
           steps <- dotdotdot$steps
