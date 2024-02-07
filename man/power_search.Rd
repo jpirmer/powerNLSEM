@@ -22,7 +22,7 @@ power_search(
   N_start = nrow(lavModel) * 10,
   type = "u",
   steps = 10,
-  lb = nrow(lavModel),
+  lb = nrow(lavModel) * 5,
   switchStep = round(steps/2),
   FSmethod = "SL",
   test = "onesided",
@@ -62,13 +62,13 @@ power_search(
 
 \item{Ns}{Sample sizes used in power estimation process. Default to \code{NULL}.}
 
-\item{N_start}{Starting sample size. Default to \code{nrow(lavModel)*10}}
+\item{N_start}{Starting sample size for smart algorithm. Default to \code{nrow(lavModel)*10}  (10 times the number of parameters in the model without the generation of e.g., factor scores or product indicators).}
 
 \item{type}{Indicator how the samples sizes should be used in the steps of the smart algorithm: \code{"u"} for many to few to many, \code{"increasing"} for increasing replications and \code{"even"} for evenly distributed replications across steps. Default to \code{"u"}.}
 
 \item{steps}{Steps used in \code{search_method = "smart"}, i.e., the smart algorithm. This is ignored if bruteforce is used. Default to 10.}
 
-\item{lb}{Lower bound of N used in search. Default to \code{nrow(lavModel)}.}
+\item{lb}{Lower bound of N used in search. Default to \code{nrow(lavModel)*5} (5 times the number of parameters in the model without the generation of e.g., factor scores or product indicators), however, some methods can deal with much smaller sample sizes so this can be adjusted.}
 
 \item{switchStep}{Steps after which smart search method changes from exploration to exploitation. Default to \code{round(steps/2)}. Exploration phase searches for the interval for N so that the resulting power is within \code{[.15, .85]} since the power curve is steepest at .5 and becomes less step towards plus/min \code{Inf}. Exploitation phase searches for an interval for N around the \code{power_aim} argument which shrinks from plus/minus .1 to .01. If \code{swicthStep = Inf}, then only exploration is used. If \code{switchStep} is used then the search process is reset at that point, which results in a new estimation in the bounds of the interval of N independent of the previous ones which might be restricted in change (see also argument( \code{constrainRelChange}).}
 
