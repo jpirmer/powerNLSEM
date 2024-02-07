@@ -38,7 +38,13 @@ smart_search <- function(POI,
      }else{
           Rel_tol <- rep(Inf, steps)
      }
-     Conditions <- data.frame(Reps, Power_interval, Rel_tol)
+     # let the precision increase in prediciting power relative to precision due increase replications
+     if(alpha_power_modeling >= 1){
+          Alpha_power_modeling <- rep(1, steps)
+     }else{
+          Alpha_power_modeling <- seq(1, alpha_power_modeling, length.out = steps)
+     }
+     Conditions <- data.frame(Reps, Power_interval, Rel_tol, Alpha_power_modeling)
 
      df_POI <- data.frame("matchLabel" = POI)
      fit_temp <- lavModel_Analysis[lavModel_Analysis$matchLabel %in% df_POI$matchLabel,,drop = FALSE]
@@ -178,6 +184,36 @@ get_Reps <- function(type = "u", R = 1000, steps = 10) {
      return(Ns)
 }
 
+
+# generate sequence of Ns
+get_Reps <- function(type = "u", R = 1000, steps = 10) {
+     if(tolower(type) == "increasing")
+     {
+          temp <- R/(steps*(steps+1)/2)
+          Ns <- seq(temp, temp*steps, temp) |> round()
+          temp_diff <- R - sum(Ns)
+          Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
+     }else if(tolower(type) == "u"){
+          temp <- (R/2)/((steps + steps%%2)/2*((steps + steps%%2)/2+1)/2)
+          Ns <- seq(temp, temp*(steps + steps%%2)/2, temp) |> round()
+          temp_diff <- R/2 - sum(Ns)
+          Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
+          Ns <- c(sort(Ns, decreasing = TRUE), Ns)
+          if(length(Ns) != steps)
+          {
+               Ns <- c(Ns[1:((steps+1)/2-1)],
+                       sum(Ns[((steps+1)/2):(((steps+1)/2+1))]),
+                       Ns[1+((steps+1)/2+1):(steps)])
+          }
+     }else if(tolower(type) == "equal"){
+          temp <- R/steps
+          Ns <- rep(temp, steps) |> round()
+          temp_diff <- R - sum(Ns)
+          Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
+     }
+     return(Ns)
+}
+
 # find n from an glm-fit model
 find_n_from_glm <- function(fit, pow = .8,
                             alpha_power_modeling, Nmax = 10^4,
@@ -242,20 +278,20 @@ fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
                stop("This power modeling method has not been implemented.")
           }
           Nnew_temp <- find_n_from_glm(fit = fit, pow = power_aim,
-                                       alpha_power_modeling =  alpha_power_modeling,
+                                       alpha_power_modeling =  Conditions$Alpha_power_modeling[i],
                                        power_modeling_method = power_modeling_method)
           if(i <= switchStep)
           {
                Nl_temp <- find_n_from_glm(fit = fit, pow = .15, alpha_power_modeling = 1,
                                           power_modeling_method = power_modeling_method)
-               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha_power_modeling = alpha_power_modeling,
+               Nu_temp <- find_n_from_glm(fit = fit, pow = .85, alpha_power_modeling = Conditions$Alpha_power_modeling[i],
                                           power_modeling_method = power_modeling_method)
           }else{
                Nl_temp <- find_n_from_glm(fit = fit, pow = max(power_aim - Conditions$Power_interval[i], .0001),
                                           alpha_power_modeling = 1,
                                           power_modeling_method = power_modeling_method)
                Nu_temp <- find_n_from_glm(fit = fit, pow = min(power_aim + Conditions$Power_interval[i], .9999),
-                                          alpha_power_modeling = alpha_power_modeling,
+                                          alpha_power_modeling = Conditions$Alpha_power_modeling[i],
                                           power_modeling_method = power_modeling_method)
           }
      }else{
@@ -324,5 +360,7 @@ evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
      }
      return(max(lb, N))
 }
+
+
 
 
