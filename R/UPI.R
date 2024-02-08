@@ -1,5 +1,4 @@
 #' Unconstrained Product Indicator approach by Marsh et al. (2004), with extensions by Kelava and Brandt (2009)
-#' @import semTools
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
 #' @param data_transformations Data transformations

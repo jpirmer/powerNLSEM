@@ -46,6 +46,10 @@ powerNLSEM <- function(model, POI,
      seeds <- sample(1:10^9, size = R)
      t0 <- proc.time()
 
+     # check whether needed packages are installed
+     if(tolower(method) %in% c("sem", "upi")) rlang::check_installed("semTools")
+     if(tolower(method) == "lms") rlang::check_installed("MplusAutomation")
+
      ### prepare model ----
      lavModel <- lavaan::lavMatrixRepresentation(lavaan::lavaanify(model = model,
                                                                     meanstructure = TRUE,auto.var = TRUE,
@@ -140,11 +144,6 @@ powerNLSEM <- function(model, POI,
           if(!(tolower(method) %in% c("upi", "sem"))){
                warning("No latent variables present in model, advised to use method = 'sem' (or method = 'UPI', as they are identical).")
           }
-     }
-     if(tolower(method) == "lms")
-     {
-          temp <- try(MplusAutomation::detectMplus)
-          if(inherits(temp, "try-error")) stop("LMS needs the installation of the external software Mplus.")
      }
      # check cross-relations
      temp <- lavModel[lavModel$op == "=~",]
