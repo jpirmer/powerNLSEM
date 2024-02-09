@@ -137,6 +137,10 @@ smart_search <- function(POI,
           if(inherits(N_temp, "try-error"))
           {
                N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
+          }else if(any(unlist(N_temp) == Inf))
+          {
+               N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb),
+                              "Nu" = ceiling(1.5*Nu))
           }
           Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
 
