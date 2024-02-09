@@ -76,12 +76,12 @@ powerNLSEM <- function(model, POI,
      if(!is.null(dotdotdot$N_start)){
           N_start <- dotdotdot$N_start
      }else{
-          N_start <- nrow(lavModel)*10
+          N_start <- nrow(lavModel[lavModel$op != "~1", ])*10
      }
      if(!is.null(dotdotdot$lb)){
           lb <- max(dotdotdot$lb, nrow(lavModel))
      }else{
-          lb <- nrow(lavModel)*5
+          lb <-  nrow(lavModel[lavModel$op != "~1", ])*5
      }
      if(!is.null(dotdotdot$steps)){
           steps <- dotdotdot$steps
