@@ -1,6 +1,7 @@
 # These scripts fit a probit model with sqrt(n) as predictor for the two sided test
 # which is equivalent to the one-parameter Wald test, i.e., this is a probit-regression for
 # Wald-test distributed test results
+#' @import numDeriv
 LL_WaldProbit <- function(beta, Ns, sig, vec = FALSE)
 {
      P <- pnorm(q = -beta[1] + beta[2]*sqrt(Ns))  +
@@ -45,7 +46,7 @@ fitWaldglm <- function(sig, Ns)
 
 predict_WaldGLM <- function(out, N_interest)
 {
-     if(class(out) != "WaldGLM") stop("Predict for WaldGLM object.")
+     if(inherits(out, "WaldGLM")) stop("Predict for WaldGLM object.")
      beta <- out$est
      P <- pnorm(q = -beta[1] + beta[2]*sqrt(N_interest))  +
           pnorm(q = beta[1] +  beta[2]*sqrt(N_interest),
@@ -55,7 +56,7 @@ predict_WaldGLM <- function(out, N_interest)
 
 Wald_pred_confint <- function(out, N_interest, alpha)
 {
-     if(class(out) != "WaldGLM") stop("Confint for WaldGLM object.")
+     if(inherits(out, "WaldGLM")) stop("Confint for WaldGLM object.")
      beta <- out$est
      sig <- out$sig
      Ns <- out$Ns
