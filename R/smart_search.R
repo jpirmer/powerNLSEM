@@ -64,7 +64,7 @@ smart_search <- function(POI,
 
           # sample sample sizes
           Ns <- sample(seq(Nl, Nu, 1), size = Conditions$Reps[i], replace = TRUE,
-                       prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
+                       prob = dnorm(x = seq(-2,2, length.out = (Nu-Nl+1))))
           Ns <- sort(Ns, decreasing = TRUE); Nall <- c(Nall, Ns)
           if(verbose) cat(paste0("Step ", i, " of ", steps, ". Fitting ", length(Ns),
                                  " models with Ns in [", Nl, ", ", Nu,"].\n"))
