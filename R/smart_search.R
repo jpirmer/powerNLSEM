@@ -106,6 +106,9 @@ smart_search <- function(POI,
                temp_se <- sapply(Fitted, "[[", "se")
                temp_se <- as.matrix(temp_se)
                colnames(temp_se) <- POI; rownames(temp_se) <- NULL
+
+               df_est <- rbind(df_est, temp_est)
+               df_se <- rbind(df_se, temp_se)
                }else{
                df_est <- rbind(df_est, t(sapply(Fitted, "[[", "est")))
                df_se <- rbind(df_se, t(sapply(Fitted, "[[", "se")))
