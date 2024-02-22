@@ -26,7 +26,9 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
      Reps <- get_Reps(type = type, R = R, steps = steps)
      Rel_tol <- Inf
      Power_interval <- 0
-     Conditions <- data.frame(Reps, Power_interval, Rel_tol)
+     Alpha_power_modeling <- alpha_power_modeling
+     Conditions <- data.frame(Reps, Power_interval, Rel_tol, Alpha_power_modeling)
+
      dotdotdot <- list(...)
      if(is.null(Ns)){
           Nl <- max(N_start/4, lb); Nu <- N_start*3
