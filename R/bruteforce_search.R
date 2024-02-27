@@ -10,7 +10,7 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
                               power_modeling_method,
                               R = 1000,
                               power_aim = .8, alpha = .05,
-                              lb = nrow(lavModel),
+                              nlb = nrow(lavModel[lavModel$op != "~1", ])*5,
                               CORES, verbose = TRUE,
                               alpha_power_modeling = .05,
                               FSmethod = "SL",
@@ -31,7 +31,7 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
 
      dotdotdot <- list(...)
      if(is.null(Ns)){
-          Nl <- max(N_start/4, lb); Nu <- N_start*3
+          Nl <- max(N_start/4, nlb); Nu <- N_start*3
           Ns <- sample(seq(Nl, Nu, 1), size = R, replace = TRUE,
                        prob = dnorm(x = seq(-2,2,4/(-1+length(seq(Nl, Nu, 1))))))
      }else{
@@ -135,7 +135,7 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
      N_temp <- try(do.call("fit_power_model", mget(args)), silent = TRUE)
      if(inherits(N_temp, "try-error"))
      {
-          N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
+          N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), nlb), "Nu" = Nu)
      }
      Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
      Nfinal <- c(Nfinal, Nnew)

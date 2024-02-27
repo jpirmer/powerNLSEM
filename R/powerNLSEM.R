@@ -78,10 +78,10 @@ powerNLSEM <- function(model, POI,
      }else{
           N_start <- nrow(lavModel[lavModel$op != "~1", ])*10
      }
-     if(!is.null(dotdotdot$lb)){
-          lb <- max(dotdotdot$lb, nrow(lavModel))
+     if(!is.null(dotdotdot$nlb)){
+          nlb <- max(dotdotdot$nlb, nrow(lavModel))
      }else{
-          lb <-  nrow(lavModel[lavModel$op != "~1", ])*5
+          nlb <-  nrow(lavModel[lavModel$op != "~1", ])*5
      }
      if(!is.null(dotdotdot$steps)){
           steps <- dotdotdot$steps
@@ -93,10 +93,10 @@ powerNLSEM <- function(model, POI,
      }else{
           switchStep <- round(steps/2)
      }
-     if(!is.null(dotdotdot$type)){
-          type <- dotdotdot$type
+     if(!is.null(dotdotdot$distRj)){
+          distRj <- dotdotdot$distRj
      }else{
-          type <- "u"
+          distRj <- "increasing"
      }
      if(!is.null(dotdotdot$FSmethod)){
           FSmethod <- dotdotdot$FSmethod

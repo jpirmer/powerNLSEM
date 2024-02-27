@@ -8,11 +8,11 @@ smart_search <- function(POI,
                          data_transformations,
                          search_method,
                          power_modeling_method,
-                         N_start = nrow(lavModel)*10, type = "u",
+                         N_start = nrow(lavModel)*10, distRj = "increasing",
                          R = 1000, steps = 10,
                          power_aim = .8, alpha = .05,
                          alpha_power_modeling = .05,
-                         lb = nrow(lavModel),
+                         nlb = nrow(lavModel[lavModel$op != "~1", ])*5,
                          switchStep = round(steps/2),
                          constrainRelChange = TRUE,
                          CORES, verbose = TRUE,
@@ -26,7 +26,7 @@ smart_search <- function(POI,
 {
      dotdotdot <- list(...)
      sim_seeds <- seeds
-     Reps <- get_Reps(type = type, R = R, steps = steps)
+     Reps <- get_Reps(distRj = distRj, R = R, steps = steps)
      if(switchStep == Inf){
           Power_interval <- rep(0, steps)
      }else{
@@ -55,7 +55,7 @@ smart_search <- function(POI,
      Nfinal <- c(); Nnew <- N_start; df <- c()
      df_est <- c(); df_se <- c(); df_pvalue_onesided <- c(); df_pvalue_twosided <- c()
      df_sigs_onesided <- c(); df_sigs_twosided <- c(); vec_fitOK <- c()
-     Nl <- ceiling(max(N_start / 2, lb)); Nu <- ceiling(N_start/2+N_start); Nall <- c()
+     Nl <- ceiling(max(N_start / 2, nlb)); Nu <- ceiling(N_start/2+N_start); Nall <- c()
      if(verbose) cat(paste0("Initiating smart search to find simulation based N for power of ",
                             power_aim, " within ", steps, " steps\nand in total ",
                             R, " replications. Ns are drawn randomly...\n"))
@@ -139,10 +139,10 @@ smart_search <- function(POI,
           N_temp <- try(do.call("fit_power_model", mget(args)), silent = TRUE)
           if(inherits(N_temp, "try-error"))
           {
-               N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb), "Nu" = Nu)
+               N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), nlb), "Nu" = Nu)
           }else if(any(unlist(N_temp) == Inf))
           {
-               N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), lb),
+               N_temp <- list("Nnew" = Nnew, "Nl" = max(round(Nl/2), nlb),
                               "Nu" = ceiling(1.5*Nu))
           }
           Nnew <- N_temp$Nnew; Nl <- N_temp$Nl; Nu <- N_temp$Nu
@@ -163,14 +163,14 @@ smart_search <- function(POI,
 }
 
 # generate sequence of Ns
-get_Reps <- function(type = "u", R = 1000, steps = 10) {
-     if(tolower(type) == "increasing")
+get_Reps <- function(distRj = "increasing", R = 1000, steps = 10) {
+     if(tolower(distRj) == "increasing")
      {
           temp <- R/(steps*(steps+1)/2)
           Ns <- seq(temp, temp*steps, temp) |> round()
           temp_diff <- R - sum(Ns)
           Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
-     }else if(tolower(type) == "u"){
+     }else if(tolower(distRj) == "u"){
           temp <- (R/2)/((steps + steps%%2)/2*((steps + steps%%2)/2+1)/2)
           Ns <- seq(temp, temp*(steps + steps%%2)/2, temp) |> round()
           temp_diff <- R/2 - sum(Ns)
@@ -182,7 +182,7 @@ get_Reps <- function(type = "u", R = 1000, steps = 10) {
                        sum(Ns[((steps+1)/2):(((steps+1)/2+1))]),
                        Ns[1+((steps+1)/2+1):(steps)])
           }
-     }else if(tolower(type) == "equal"){
+     }else if(tolower(distRj) == "equal"){
           temp <- R/steps
           Ns <- rep(temp, steps) |> round()
           temp_diff <- R - sum(Ns)
@@ -193,14 +193,14 @@ get_Reps <- function(type = "u", R = 1000, steps = 10) {
 
 
 # generate sequence of Ns
-get_Reps <- function(type = "u", R = 1000, steps = 10) {
-     if(tolower(type) == "increasing")
+get_Reps <- function(distRj = "increasing", R = 1000, steps = 10) {
+     if(tolower(distRj) == "increasing")
      {
           temp <- R/(steps*(steps+1)/2)
           Ns <- seq(temp, temp*steps, temp) |> round()
           temp_diff <- R - sum(Ns)
           Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
-     }else if(tolower(type) == "u"){
+     }else if(tolower(distRj) == "u"){
           temp <- (R/2)/((steps + steps%%2)/2*((steps + steps%%2)/2+1)/2)
           Ns <- seq(temp, temp*(steps + steps%%2)/2, temp) |> round()
           temp_diff <- R/2 - sum(Ns)
@@ -212,7 +212,7 @@ get_Reps <- function(type = "u", R = 1000, steps = 10) {
                        sum(Ns[((steps+1)/2):(((steps+1)/2+1))]),
                        Ns[1+((steps+1)/2+1):(steps)])
           }
-     }else if(tolower(type) == "equal"){
+     }else if(tolower(distRj) == "equal"){
           temp <- R/steps
           Ns <- rep(temp, steps) |> round()
           temp_diff <- R - sum(Ns)
@@ -261,7 +261,7 @@ find_n_from_glm <- function(fit, pow = .8,
 }
 
 # fit power model
-fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
+fit_power_model <- function(Nnew, Nl, Nu, nlb, ind_min,
                             power_modeling_method,
                             df, relFreq_indMin,
                             power_aim, i = 0, switchStep = Inf,
@@ -316,15 +316,15 @@ fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
      {
           Nnew <- evaluate_N(N_temp = Nnew_temp, N = Nnew,
                              relFreq_indMin = relFreq_indMin,
-                             fit = fit, lb = lb,
+                             fit = fit, nlb = nlb,
                              rel_tol = Conditions$Rel_tol[i])
           Nl <- evaluate_N(N_temp = Nl_temp, N = Nl,
                            relFreq_indMin = relFreq_indMin,
-                           fit = fit, lb = lb,
+                           fit = fit, nlb = nlb,
                            rel_tol = Conditions$Rel_tol[i])
           Nu <- evaluate_N(N_temp = Nu_temp, N = Nu,
                            relFreq_indMin = relFreq_indMin,
-                           fit = fit, lb = lb,
+                           fit = fit, nlb = nlb,
                            rel_tol = Conditions$Rel_tol[i])
      }else{
           Nnew <- Nnew_temp; Nl <- Nl_temp; Nu <- Nu_temp
@@ -339,7 +339,7 @@ fit_power_model <- function(Nnew, Nl, Nu, lb, ind_min,
 }
 
 # evaluate resonablity of N
-evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
+evaluate_N <- function(N_temp, N, relFreq_indMin, fit, nlb, rel_tol = .5)
 {
      # handle possible non-convergence
      if(is.na(N_temp))  N_temp <- ifelse(relFreq_indMin < .5, Inf, -Inf)
@@ -365,7 +365,7 @@ evaluate_N <- function(N_temp, N, relFreq_indMin, fit, lb, rel_tol = .5)
      {
           N <- round(N/rel_tol)
      }
-     return(max(lb, N))
+     return(max(nlb, N))
 }
 
 
