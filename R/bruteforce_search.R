@@ -21,9 +21,9 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
                               test = "onesided",
                               ...)
 {
-     i <- 1; switchStep <- 0; type <- "equal"; steps <- 1 # 1 Trial for now
+     i <- 1; switchStep <- 0; distRj <- "equal"; steps <- 1 # 1 Trial for now
      sim_seeds <- seeds
-     Reps <- get_Reps(type = type, R = R, steps = steps)
+     Reps <- get_Reps(distRj = distRj, R = R, steps = steps)
      Rel_tol <- Inf
      Power_interval <- 0
      Alpha_power_modeling <- alpha_power_modeling
