@@ -129,6 +129,13 @@ The output object `Result_Power` is a list with the following objects:
 names(Result_Power)
 ```
 
+When we apply the `summary` function to the output of the `powerNLSEM` package, we get an overview of the most important information of the estimation with some visual highlights:
+
+```{r}
+summary(Result_Power)
+```
+
+The `Result_Power` contains far more information than that of the `summary`. 
 
 ```{r}
 Result_Power$N
