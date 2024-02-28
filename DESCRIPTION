@@ -4,7 +4,7 @@ Title: Model-implied simulation-based power estimation (MSPE) for
     nonlinear structural equation models (SEM)
 Version: 0.1.0
 Authors@R: 
-    person(c("Julien Patrick", "Irmer"), "jirmer@psych.uni-frankfurt.de", role = c("aut", "cre", "cph"),
+    person(c("Julien Patrick", "Irmer"), email = "jirmer@psych.uni-frankfurt.de", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-7544-6483"))
 Author: Julien Patrick Irmer [aut, cre, cph] (<https://orcid.org/0000-0002-7544-6483>)
 Maintainer: Julien Patrick Irmer <jirmer@psych.uni-frankfurt.de>
@@ -23,6 +23,7 @@ Depends:
     stats,
     utils
 Imports: 
+    crayon,
     lavaan (>= 0.6.16),
     mvtnorm,
     numDeriv,
