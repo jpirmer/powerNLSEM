@@ -192,35 +192,6 @@ get_Reps <- function(distRj = "increasing", R = 1000, steps = 10) {
 }
 
 
-# generate sequence of Ns
-get_Reps <- function(distRj = "increasing", R = 1000, steps = 10) {
-     if(tolower(distRj) == "increasing")
-     {
-          temp <- R/(steps*(steps+1)/2)
-          Ns <- seq(temp, temp*steps, temp) |> round()
-          temp_diff <- R - sum(Ns)
-          Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
-     }else if(tolower(distRj) == "u"){
-          temp <- (R/2)/((steps + steps%%2)/2*((steps + steps%%2)/2+1)/2)
-          Ns <- seq(temp, temp*(steps + steps%%2)/2, temp) |> round()
-          temp_diff <- R/2 - sum(Ns)
-          Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
-          Ns <- c(sort(Ns, decreasing = TRUE), Ns)
-          if(length(Ns) != steps)
-          {
-               Ns <- c(Ns[1:((steps+1)/2-1)],
-                       sum(Ns[((steps+1)/2):(((steps+1)/2+1))]),
-                       Ns[1+((steps+1)/2+1):(steps)])
-          }
-     }else if(tolower(distRj) == "equal"){
-          temp <- R/steps
-          Ns <- rep(temp, steps) |> round()
-          temp_diff <- R - sum(Ns)
-          Ns[which.max(Ns)] <- Ns[which.max(Ns)] + temp_diff
-     }
-     return(Ns)
-}
-
 # find n from an glm-fit model
 find_n_from_glm <- function(fit, pow = .8,
                             alpha_power_modeling, Nmax = 10^4,
