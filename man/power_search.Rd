@@ -44,7 +44,7 @@ power_search(
 
 \item{data_transformations}{Object containing info on data transformations.}
 
-\item{search_method}{String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.}
+\item{search_method}{String stating the search method. Default to \code{"adaptive"} (synonyme is \code{"smart"}). Alternative is \code{"bruteforce"}.}
 
 \item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 

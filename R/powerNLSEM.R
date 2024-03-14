@@ -7,7 +7,7 @@
 #' @param method Method used to fit to the data. Implemented methods are \code{"LMS"} (Klein & Moosbrugger, 2000) (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge), \code{"UPI"} (Kelava & Brandt, 2009, Marsh et al., 2004) for the unconstrained product indicator approach, \code{"FSR"} (Ng and Chan, 2020) for the naïve factor score approach, and \code{"SR"}, for using scale means (i.e., scale regression/path modeling).
 #' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.
 #' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
-#' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
+#' @param search_method String stating the search method. Default to \code{"adaptive"} (synonyme is \code{"smart"}). Alternative is \code{"bruteforce"}.
 #' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.
 #' @param power_aim Minimal power value to approximate. Default to \code{.8}.
 #' @param alpha Type I-error rate for significance decision. Default to \code{.05}.
@@ -30,7 +30,7 @@ powerNLSEM <- function(model, POI,
                        method,
                        test = "onesided",
                        power_modeling_method = "probit",
-                       search_method = "smart",
+                       search_method = "adaptive",
                        R = 2000,
                        power_aim = .8,
                        alpha = .05,
@@ -132,11 +132,12 @@ powerNLSEM <- function(model, POI,
           stop("Wrong input in 'test', should be 'onesided' or 'twosided'.")
      if(!(tolower(power_modeling_method) %in% c("probit", "wald", "logit")))
           stop("Wrong input in 'power_modeling_method', should be 'probit', 'wald', or 'logit'.")
-     if(!(tolower(search_method) %in% c("smart", "bruteforce")))
-          stop("Wrong input in 'test', should be 'smart' or 'bruteforce'.")
+     if(!(tolower(search_method) %in% c("smart", "bruteforce", "adaptive")))
+          stop("Wrong input in 'test', should be 'adaptive' (or 'smart'), or 'bruteforce'.")
      if(R<0 | round(R) != R) stop("'R' needs to a natural number.")
      if(power_aim >= 1 | power_aim <= 0) stop("'power_aim' needs to be within (0, 1).")
      if(alpha >= 1 | alpha <= 0) stop("'alpha' needs to be within (0, 1).")
+     if(alpha_power_modeling >= 1 | alpha_power_modeling <= 0) stop("'alpha_power_modeling' needs to be within (0, 1).")
 
 
      # check model and modeling approaches

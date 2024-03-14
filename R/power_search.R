@@ -9,7 +9,7 @@
 #' @param lavModel_Analysis lavModel object containg the parameters to be estimated.
 #' @param data_transformations Object containing info on data transformations.
 #' @param power_modeling_method Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.
-#' @param search_method String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.
+#' @param search_method String stating the search method. Default to \code{"adaptive"} (synonyme is \code{"smart"}). Alternative is \code{"bruteforce"}.
 #' @param R Total number of models to be fitted. Higher number results in higher precision and longer runtime.
 #' @param power_aim Minimal power value to approximate. Default to .8.
 #' @param alpha Type I-error rate for significance decision. Default to \code{.05}.
@@ -57,12 +57,12 @@ power_search <- function(POI,
                          constrainRelChange = TRUE,
                          seeds)
 {
-     if(tolower(search_method %in% c("smart", "smart_search")))
+     if(tolower(search_method %in% c("smart", "adaptive")))
      {
           args <- names(formals(smart_search))
           args <- args[args != "..."]
           out <- do.call("smart_search", args = mget(args))
-     }else if(tolower(search_method %in% c("bruteforce", "brute", "force", "brute force", "brute_force")))
+     }else if(tolower(search_method %in% c("bruteforce")))
      {
           args <- names(formals(bruteforce_search))
           args <- args[args != "..."]

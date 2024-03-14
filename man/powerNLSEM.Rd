@@ -10,7 +10,7 @@ powerNLSEM(
   method,
   test = "onesided",
   power_modeling_method = "probit",
-  search_method = "smart",
+  search_method = "adaptive",
   R = 2000,
   power_aim = 0.8,
   alpha = 0.05,
@@ -32,7 +32,7 @@ powerNLSEM(
 
 \item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 
-\item{search_method}{String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.}
+\item{search_method}{String stating the search method. Default to \code{"adaptive"} (synonyme is \code{"smart"}). Alternative is \code{"bruteforce"}.}
 
 \item{R}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
 
