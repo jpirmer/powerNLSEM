@@ -26,3 +26,6 @@ LMS(
 \description{
 Latent moderated strctured equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
 }
+\references{
+Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. \emph{Psychometrika, 65}(4), 457–474. \url{https://doi.org/10.1007/BF02296338}
+}

@@ -8,8 +8,7 @@
 #' @importFrom stringr str_split
 #' @importFrom stringr str_replace
 #' @importFrom stringr str_replace_all
-#' @importFrom MplusAutomation runModels
-#' @importFrom MplusAutomation readModels
+#' @references Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. _Psychometrika, 65_(4), 457–474. <https://doi.org/10.1007/BF02296338>
 #' @export
 
 
@@ -23,6 +22,9 @@ LMS <- function(lavModel_Analysis, data,
      output_file <- paste0("temp/", prefix, "_runScript_LMS.out")
      data_file <- paste0("temp/", prefix, "_data_temp.dat")
      lavModel_Analysis_LMS <- lavModel_Analysis
+
+     # Mplus only works with upper cases!
+     lavModel_Analysis_LMS$matchLabel <- toupper(lavModel_Analysis_LMS$matchLabel)
 
      # remove non-fittable coefficients
      lavModel_Analysis_LMS <- lavModel_Analysis_LMS[!((grepl(":", lavModel_Analysis_LMS$lhs) &
@@ -174,14 +176,22 @@ MODEL:
      MplusAutomation::runModels(target = input_file)
      fitMplus <- MplusAutomation::readModels(target = output_file)
 
+     # delete temp files
+     file.remove(data_file); file.remove(input_file); file.remove(output_file)
+
+     # check convergence of Mplus
+     if(length(fitMplus$warnings) > 0L | length(fitMplus$errors) > 0L){
+          stop("LMS had estimation problems.")
+     }
+
      Parameters <- data.frame(fitMplus$parameters$unstandardized)
 
-     # check convergence
+     # further check convergence and plausibility
      if(is.null(Parameters$se))
      {
           Parameters$est <- NA; Parameters$se <- NA; Parameters$est_se <- NA; Parameters$pval <- NA
      }else{
-          if(any(Parameters$se > 20*max(as.numeric(lavModel_Analysis_LMS$start), na.rm = TRUE)))
+          if(any(Parameters$se > 20*max(as.numeric(abs(lavModel_Analysis_LMS$start)), na.rm = TRUE)))
           {
                Parameters$est <- NA; Parameters$se <- NA; Parameters$est_se <- NA; Parameters$pval <- NA
           }
@@ -203,9 +213,6 @@ MODEL:
      lavModel_Analysis_LMS <- merge(x = lavModel_Analysis_LMS, y = Parameters, by = "matchLabel")
      lavModel_Analysis_LMS <- lavModel_Analysis_LMS[order(lavModel_Analysis_LMS$id),]
      lavModel_Analysis_LMS$paramHeader <- NULL;      lavModel_Analysis_LMS$param <- NULL;
-
-     # delete temp files
-     file.remove(data_file); file.remove(input_file); file.remove(output_file)
 
      return(lavModel_Analysis_LMS)
 }

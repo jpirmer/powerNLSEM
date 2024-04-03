@@ -1,11 +1,14 @@
 #' plot powerNLSEM object
 #' @param x object of class powerNLSEM
-#' @param min_num_bins minimal number of bins used for aggregating results. Default to 10.
-#' @param plot Character indicating what type of plot to create. Default to "power_model", referencing to the prediction of significant parameters using the model specified in power_modeling_method.
+#' @param test Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{NULL}, then the same as in fitted \code{powerNLSEM} object in \code{x} is used.
+#' @param plot Character indicating what type of plot to create. Default to \code{"power_model"}, referencing to the prediction of significant parameters using the model specified in \code{power_modeling_method}.
 #' @param power_modeling_method Character indicating the power modeling method used. This is only relevant when \code{plot = "power_model"} is used. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.
 #' @param se Logical indicating to use confidence intervals based on normal approximation using the standard errors. Default to \code{FALSE}.
 #' @param power_aim Power level to be included into the plot with respective N. If \code{NULL} the same power level as in the \code{powerNLSEM} function will be used. If set to \code{0} no power level and corresponding N will be plotted. Default to \code{NULL}, indicating to use the same power modeling method as was used in the \code{powerNLSEM} function.
 #' @param alpha Alpha value used for confidence intervals, when \code{se = TRUE}. Default to \code{NULL}, indicating to use the same alpha as was used in the powerNLSEM function. This does not influence the significance decision, although same alpha is used per default.
+#' @param alpha_power_modeling Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.
+#' @param min_num_bins minimal number of bins used for aggregating results. Default to 10.
+#' @param defaultgg Logical to return default ggplot object. Default to \code{FALSE}, which returns \code{theme_minimal} and other changes in theme.
 #' @param ... Additional arguments passed on to the plot function.
 #' @returns Returns \code{ggplot} object of the type specified in plot.
 #' @import ggplot2
@@ -13,9 +16,19 @@
 #' @import utils
 #' @export
 
-plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_modeling_method = NULL, se = FALSE, power_aim = NULL, alpha = NULL, ...)
+plot.powerNLSEM <- function(x, test  = NULL,
+                            plot = "power_model",
+                            power_modeling_method = NULL, se = FALSE,
+                            power_aim = NULL, alpha = NULL,
+                            alpha_power_modeling = NULL,
+                            min_num_bins = 10,
+                            defaultgg = FALSE,
+                            ...)
 {
      out <- x
+
+     # to get around R checks Ns, Power, Effect, Power_ub, Power_lb are names within a data.frame which are called in ggplot and hence are not defined gloabally:
+     Ns <- Power <- Effect <- Power_ub <- Power_lb <- NULL
      if(is.null(power_modeling_method))
      {
           power_modeling_method <- out$power_modeling_method
@@ -24,67 +37,98 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
      {
           alpha <- out$alpha
      }
+     if(is.null(test)) test <- out$test
+     if(is.null(alpha_power_modeling)) alpha_power_modeling <- out$alpha_power_modeling
+
+     # get significance decisions
+     if(tolower(test) == "onesided")
+     {
+          truth <- out$truth
+          trueMatrix <- matrix(rep(truth, each = nrow(out$est)),
+                               ncol = ncol(out$est))
+          pvalue <- pnorm(sign(trueMatrix)*as.matrix(out$est / out$se),
+                          lower.tail = FALSE)
+     }else if(tolower(test) == "twosided")
+     {
+          pvalue <- 2*pnorm(as.matrix(abs(out$est) / out$se),
+                            lower.tail = FALSE)
+     }
+     Sigs <- data.frame(pvalue < alpha); names(Sigs) <- names(out$est)
+     Sigs$Ns <- out$Ns
+     Sigs <- Sigs[out$fitOK, ] # remove false convergences
+
      if(tolower(plot) == "power_model")
      {
-          Sigs <- out$SigDecisions
           if(power_modeling_method == "probit")
           {
-               if(se)
+               temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
+                                                                     glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
+                                                                         family = binomial(link = "probit")),
+                                                                     se.fit = TRUE), simplify = FALSE)
+               Probit <- c(); Probit_UB <- c(); Probit_LB <- c()
+               for(i in 1:length(temp))
                {
-                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
-                                                                          glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
-                                                                              family = binomial(link = "probit")),
-                                                                          se.fit = TRUE), simplify = FALSE)
-                    Probit <- c(); Probit_UB <- c(); Probit_LB <- c()
-                    for(i in 1:length(temp))
-                    {
-                         Probit <- cbind(Probit, temp[[i]]$fit)
-                         Probit_UB <- cbind(Probit_UB, temp[[i]]$fit + qnorm(1-alpha/2)*temp[[i]]$se.fit)
-                         Probit_LB <- cbind(Probit_LB, temp[[i]]$fit - qnorm(1-alpha/2)*temp[[i]]$se.fit)
-                    }
-                    powers <- pnorm(Probit)
-                    powers_UB <- pnorm(Probit_UB)
-                    powers_LB <- pnorm(Probit_LB)
-               }else{
-                    Probit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
-                                                                           glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
-                                                                               family = binomial(link = "probit"))))
-                    powers <- pnorm(Probit)
+                    Probit <- cbind(Probit, temp[[i]]$fit)
+                    Probit_UB <- cbind(Probit_UB, temp[[i]]$fit + qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
+                    Probit_LB <- cbind(Probit_LB, temp[[i]]$fit - qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
                }
-
+               powers <- pnorm(Probit)
+               powers_UB <- pnorm(Probit_UB)
+               powers_LB <- pnorm(Probit_LB)
+          }else if(tolower(power_modeling_method) == "wald")
+          {
+               temp  <- lapply(1:(ncol(Sigs)-1), function(i) { fitWald <- suppressWarnings(fitWaldglm(sig = na.omit(Sigs)[, i],
+                                                                                     Ns = na.omit(Sigs)$Ns))
+               if(all(is.na(fitWald$est))){
+                    NonCov <- data.frame(matrix(NA, ncol = 3,
+                                     nrow =  length(c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE)))))
+                    names(NonCov) <- c("P", "P_lb", "P_ub")
+                    return(NonCov)
+               }
+                    WaldCI <- suppressWarnings(Wald_pred_confint(out = fitWald,
+                                                                 N_interest = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE)),
+                                                                 alpha = alpha_power_modeling))
+                    return(WaldCI)})
+               powers <- c(); powers_UB <- c(); powers_LB <- c()
+               for(i in 1:length(temp))
+               {
+                    powers <- cbind(powers, temp[[i]]$P)
+                    powers_UB <- cbind(powers_UB, temp[[i]]$P_ub)
+                    powers_LB <- cbind(powers_LB, temp[[i]]$P_lb)
+               }
+               # replace unplausible values
+               powers[powers > 1] <- 1
+               powers_UB[powers_UB > 1] <- 1
+               powers_LB[powers_LB > 1] <- 1
+               powers[powers < 0] <- 0
+               powers_UB[powers_UB < 0] <- 0
+               powers_LB[powers_LB < 0] <- 0
           }else if(power_modeling_method == "logit")
           {
-               if(se)
+               temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
+                                                                     glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
+                                                                         family = binomial(link = "logit")),
+                                                                     se.fit = TRUE), simplify = FALSE)
+               Logit <- c(); Logit_UB <- c(); Logit_LB <- c()
+               for(i in 1:length(temp))
                {
-                    temp  <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
-                                                                          glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
-                                                                              family = binomial(link = "logit")),
-                                                                          se.fit = TRUE), simplify = FALSE)
-                    Logit <- c(); Logit_UB <- c(); Logit_LB <- c()
-                    for(i in 1:length(temp))
-                    {
-                         Logit <- cbind(Logit, temp[[i]]$fit)
-                         Logit_UB <- cbind(Logit_UB, temp[[i]]$fit + qnorm(1-alpha/2)*temp[[i]]$se.fit)
-                         Logit_LB <- cbind(Logit_LB, temp[[i]]$fit - qnorm(1-alpha/2)*temp[[i]]$se.fit)
-                    }
-                    powers <- exp(Logit)/(1 + exp(Logit))
-                    powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
-                    powers_LB <- exp(Logit_LB)/(1 + exp(Logit_LB))
-
-               }else{
-                    Logit <- sapply(1:(ncol(Sigs)-1), function(i) predict(newdata = data.frame("Ns" = c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))),
-                                                                          glm(Sigs[,i]~I(sqrt(Ns)), data = Sigs,
-                                                                              family = binomial(link = "logit"))))
-                    powers <- exp(Logit)/(1 + exp(Logit))
-
+                    Logit <- cbind(Logit, temp[[i]]$fit)
+                    Logit_UB <- cbind(Logit_UB, temp[[i]]$fit + qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
+                    Logit_LB <- cbind(Logit_LB, temp[[i]]$fit - qnorm(1-alpha_power_modeling/2)*temp[[i]]$se.fit)
                }
-
+               powers <- exp(Logit)/(1 + exp(Logit))
+               powers_UB <- exp(Logit_UB)/(1 + exp(Logit_UB))
+               powers_LB <- exp(Logit_LB)/(1 + exp(Logit_LB))
           }
 
           if(se){
                nonconvergence_UB <- apply(powers_UB, 2, function(x) all(x==1, na.rm = TRUE))
                nonconvergence_LB <- apply(powers_LB, 2, function(x) all(x==0, na.rm = TRUE))
                nonconvergence_both <- colMeans(powers_UB - powers_LB, na.rm = TRUE) > .95 # large CIs
+
+               nonconvergence_UB[is.na(nonconvergence_UB)] <- TRUE
+               nonconvergence_LB[is.na(nonconvergence_LB)] <- TRUE
+               nonconvergence_both[is.na(nonconvergence_both)] <- TRUE
 
                if(any(nonconvergence_UB)) powers_UB[, nonconvergence_UB] <- powers[, nonconvergence_UB]
                if(any(nonconvergence_LB)) powers_LB[, nonconvergence_LB] <- powers[, nonconvergence_LB]
@@ -112,7 +156,7 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                     geom_ribbon(aes(x=Ns, y = Power, ymax = Power_ub, ymin = Power_lb), alpha = .3, lwd = 0.1)+
                     geom_line(lwd=1)+
                     ggtitle(paste0("Model implied power with confidence bands for ", out$method),
-                            subtitle = paste0("using ", power_modeling_method, " regression"))
+                            subtitle = paste0("using ", power_modeling_method, " regression for ", test, " test"))
           }else{
                df_pred <- cbind(powers, c(min(Sigs$Ns, na.rm = TRUE):max(Sigs$Ns, na.rm = TRUE))) |> data.frame(); names(df_pred) <- names(Sigs)
                df_pred <- df_pred[order(df_pred$Ns),]
@@ -122,13 +166,13 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect))+
                      ylab("Predicted Power")+xlab("N")+
                      geom_line(lwd = 1)+ggtitle(paste0("Model implied power for ", out$method),
-                                               subtitle = paste0("using ", power_modeling_method, " regression"))
+                                               subtitle = paste0("using ", power_modeling_method, " regression for ", test, " test"))
           }
 
      }else if(tolower(plot) == "empirical")
      {
-          SUMMARY <- aggregate(.~ Ns, data = out$SigDecisions, FUN = function(x) mean(x = x, na.rm = TRUE))
-          SUMMARY$Ns_count <- as.numeric(table(out$SigDecisions$Ns))
+          SUMMARY <- aggregate(.~ Ns, data = Sigs, FUN = function(x) mean(x = x, na.rm = TRUE))
+          SUMMARY$Ns_count <- as.numeric(table(Sigs$Ns))
           NAMES <- names(SUMMARY)
           SUMMARY <- data.frame(SUMMARY)
           names(SUMMARY) <- NAMES
@@ -160,22 +204,27 @@ plot.powerNLSEM <- function(x, min_num_bins = 10, plot = "power_model", power_mo
                              direction = "long", v.names = c("Power"),
                              times = names(SUMMARY_agg)[names(SUMMARY_agg) != "Ns"], timevar = "Effect")
           gg <- ggplot(data = df_long, aes(Ns, Power, col = Effect, fill = Effect))+geom_point(cex = .1)+
-               geom_smooth(method = "loess", formula = "y~x")+
+               geom_smooth(method = "loess", formula = "y~x", level = 1-alpha_power_modeling)+
                ylab("Predicted Power")+xlab("N")+
                ggtitle(paste0("Model implied power with confidence bands for ", out$method),
-                       subtitle = paste0("using LOESS"))
+                       subtitle = paste0("using LOESS  for ", test, " test"))
      }
 
-     if(is.null(power_aim)){
+     if(is.null(power_aim) &
+        (test == out$test) &
+        (power_modeling_method == out$power_modeling_method) &
+        (alpha == out$alpha) &
+        (alpha_power_modeling == out$alpha_power_modeling)){
           gg <- gg + geom_hline(yintercept = out$power, lwd = .5, lty = 3)+
                geom_vline(xintercept = out$N, lwd = .5, lty = 3)
      }else if(all(power_aim < 1) & all(power_aim > 0))
      {
-          temp <- reanalyse.powerNLSEM(out, powerLevels = power_aim,
+          if(is.null(power_aim)) power_aim <- out$power
+          temp <- reanalyse.powerNLSEM(out, powerLevels = power_aim, test = test,
                                power_modeling_method = power_modeling_method,
-                               alpha = alpha)
+                               alpha = alpha, alpha_power_modeling = alpha_power_modeling)
           gg <- gg + geom_hline(yintercept = temp$power, lwd = .5, lty = 3)+
-               geom_vline(xintercept = temp$Nall, lwd = .5, lty = 3)
+               geom_vline(xintercept = temp$Npower, lwd = .5, lty = 3)
 
      }
      gg <- gg + theme_minimal(base_size = 16)

@@ -1,23 +1,44 @@
-Package: powerNLSEM
 Type: Package
-Title: Model-implied simulation-based power estimation (MSPE) for nonlinear structural equation models (SEM)
-Version: 0.0.2
-Authors@R: c(person("Julien Patrick", "Irmer", email = "jirmer@psych.uni-frankfurt.de",
-                    comment = c(ORCID = "0000-0002-7544-6483"),
-                    role = c("aut", "cre", "cph")))
+Package: powerNLSEM
+Title: Model-implied simulation-based power estimation (MSPE) for
+    nonlinear structural equation models (SEM)
+Version: 0.1.0
+Authors@R: 
+    person(c("Julien Patrick", "Irmer"), email = "jpirmer@gmail.com", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0002-7544-6483"))
 Author: Julien Patrick Irmer [aut, cre, cph] (<https://orcid.org/0000-0002-7544-6483>)
-Maintainer: Julien Patrick Irmer <jirmer@psych.uni-frankfurt.de>
-Description: Model-implied simulation-based power estimation (MSPE) for nonlinear (and linear) SEM, path analysis and regression analysis. A theoretical framework is used to approximate the relation between power and sample size for given type I error rates and effect size.
-    The package offers a smart search algorithm to find the optimal N for given effect sizes type I error rates. Plots can be used to visualize the power relation to N for different parameters of interst (POI).
-License: GPL-3 
-Encoding: UTF-8
-LazyData: true
+Maintainer: Julien Patrick Irmer <jpirmer@gmail.com>
+Description: Model-implied simulation-based power estimation (MSPE) for
+    nonlinear (and linear) SEM, path analysis and regression analysis. A
+    theoretical framework is used to approximate the relation between
+    power and sample size for given type I error rates and effect size.
+    The package offers a smart search algorithm to find the optimal N for
+    given effect sizes type I error rates. Plots can be used to visualize
+    the power relation to N for different parameters of interst (POI).
+License: GPL-3
 URL: https://github.com/jpirmer/powerNLSEM
 BugReports: https://github.com/jpirmer/powerNLSEM/issues
-Depends: ggplot2, stats, utils
-Imports: stringr, pbapply, mvtnorm, lavaan (>= 0.6.16), MplusAutomation (>= 0.7-2)
-RoxygenNote: 7.2.3
+Depends: 
+    ggplot2,
+    stats,
+    utils
+Imports: 
+    crayon,
+    lavaan (>= 0.6.16),
+    mvtnorm,
+    numDeriv,
+    pbapply,
+    rlang (>= 1.1.0),
+    stringr
 Suggests: 
     knitr,
-    rmarkdown
-VignetteBuilder: knitr
+    MplusAutomation (>= 0.7-2),
+    rmarkdown,
+    semTools,
+    simsem
+VignetteBuilder: 
+    knitr
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3

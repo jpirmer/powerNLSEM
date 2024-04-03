@@ -1,6 +1,6 @@
 ---
 title: "powerNLSEM"
-subtitle: "Model based power analysis for nonlinear Structural Equation Modeling (NLSEM)"
+subtitle: "Model-implied simulation-based power estimation (MSPE) for nonlinear Structural Equation Modeling (NLSEM)"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{powerNLSEM}
@@ -15,7 +15,8 @@ knitr::opts_chunk$set(
 )
 ```
 
-This is an `R` package to use a model implied fit function to find the minimum sample size for a given power within a nonlinear Structural Equation Model (NLSEM) for several parameters of interest (POI). The package was created as a supplement to the publication **INSERT PUBLICATION HERE: Irmer et al. (2023)**.
+This is an `R` package to use the model-impled simulation-based power estimation (MSPE) method to find the minimum required sample size for a given power within a nonlinear Structural Equation Model (NLSEM) for several parameters of interest (POI). 
+<!-- The package was created as a supplement to the publication **INSERT PUBLICATION HERE: Irmer et al. (2023)**. -->
 
 ## Install the latest working version from Github
 This requires the package `devtools`.
@@ -71,7 +72,7 @@ y3~~.3*y3
 
 All parameters in the model are given by the user, otherwise `lavaan`'s defaults are used. These are `1` for variances, `0.5` for covariance and `0` for all other coefficients. Hence, not stating a coefficient will result in zero-effects for which the power is just the level of significance ($\alpha$ or the type-I error). 
 
-Interactions among latent variables have not yet been included into `lavaan` (version 0.6.13), which is why this is handeled by the `powerNLSEM` package by translating the syntax into syntax for which nonlinear models can be estimated. For now these are `LMS` (latent moderated structured equation, Klein & Moosbrugger, 2000), which needs an installation of `Mplus` (Muthén & Muthén, 1998-2017), `UPI` (unconstrained product indicator approach, Marsh et al., 2004, Kelava & Brandt, 2009), which further makes use of the `semTools` package (Jorgensen et al., 2022) to compute the product indicators in a matched or unmatched way (including different ways of centering the indicators) and a scale mean regression based path analysis where the latent variables are collapsed to means of the indicators per latent variables and path analysis is used to fit the NLSEM.
+Interactions among latent variables have not yet been included into `lavaan` (version 0.6.13), which is why this is handeled by the `powerNLSEM` package by translating the syntax into syntax for which nonlinear models can be estimated. For now these are `LMS` (latent moderated structured equation, Klein & Moosbrugger, 2000), which needs an installation of `Mplus` (Muthén & Muthén, 1998-2017), `UPI` (unconstrained product indicator approach, Marsh et al., 2004, Kelava & Brandt, 2009), which further makes use of the `semTools` package (Jorgensen et al., 2022) to compute the product indicators in a matched or unmatched way (including different ways of centering the indicators), a factor score approach using the SL-method (named after Skrondal & Laake, 2001, as studied in Ng & Chang, 2020) and a scale mean regression based path analysis where the latent variables are collapsed to means of the indicators per latent variables and path analysis is used to fit the NLSEM.
 
 ```{r, echo = F}
 cat("# structural models
@@ -79,20 +80,19 @@ Y ~ 0.3*X + .2*Z +  .2*X:Z
 
 # residual variances
 Y~~.7975*Y")
-
 ```
 
-States the structural model of the NLSEM as $Y=.3X + .2Z + .2XZ + \varepsilon_Y$, where $\varepsilon_Y\sim\mathcal{N}(0,.7975)$, i.e., the variance $\mathbb{V}ar[\varepsilon_Y]=.7975$. We are interested how large the sample size needs to be for a power of 80% for the three regression coefficients. We will use the smart search algorithm to find the necessary sample size.
+States the structural model of the NLSEM as $Y=.3X + .2Z + .2XZ + \varepsilon_Y$, where $\varepsilon_Y\sim\mathcal{N}(0,.7975)$, i.e., the variance $\mathbb{V}ar[\varepsilon_Y]=.7975$. We are interested how large the sample size needs to be for a power of 80% for the three regression coefficients. We will use the adaptive search algorithm to find the necessary sample size.
 
-### Smart Search
+### Adaptive Search
 
-After stating the model, we can use the `powerNLSEM` function to use a smart search algorithm to find the optimal sample size for our desired power for a given type I-error rate. For computational reasons we will use the scale regression approach to examplify the use of the function with a very small number of replications: 
+After stating the model, we can use the `powerNLSEM` function to use the adaptive search algorithm to find the optimal sample size for our desired power for a given Type I error rate. For computational reasons we will use the scale regression approach to examplify the use of the function with a very small number of replications: 
 
 ```{r, warning=FALSE,error=FALSE}
-Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method = "sr",
-                           search_method = "smart", steps = 10, power_modeling_method = "logit",
-                           Ntotal = 1000, power_aim = .8, alpha = .05, CORES = 1, verbose = T,
-                           seed = 2023)
+Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method = "UPI",
+                           search_method = "adaptive", steps = 10, power_modeling_method = "probit",
+                           R = 1000, power_aim = .8, alpha = .05, alpha_power_modeling = .05,
+                           CORES = 1, seed = 2024)
 ```
 
 <!-- ```{r, echo = F} -->
@@ -120,7 +120,7 @@ Result_Power <- powerNLSEM(model = model, POI = c("Y~X", "Y~Z", "Y~X:Z"), method
 <!--   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=05s ") -->
 <!-- ``` -->
 
-The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"sr"`, which indicates that the latent variables should be collapsed to means (this is a very loose approximation of the latent variable, which can be arbitrarily wrong and is used for demonstration purposes here **[[CHECK THIS!!!!!! WRITE MORE]]**), `search_method` is choosen to be `"smart"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 smart search `steps` are chosen with a `power_modeling_method` of `"logit"`, which means the significance decisions per parameter are modeled via a logistic regression model (see Schoemann, et al., 2014).  `Ntotal` is the total number of models fitted (here 1000 is very small, this number should be increased for higher precision, values much smaller may create unwanted behaviour of the search algorithm as the power-model might be to plane). `power_aim` is the desired power level (here 0.8), `alpha` is the corresponding type I-error rate (level of significance, here 0.05), `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime). `verbose` is a logical indicating whether to print information on the search algorithm in the console. used  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
+The argument `model` is given our previously stated model in `lavaan`-syntax, `POI` describe the **P**arameters **O**f **I**nterest (here we are interested in the power of the linear effect of `X` and `Z` on `Y` and the interaction between `X:Z` on `Y`, namely all the structural effects within the model, therefore `POI = c("Y~X", "Y~Z", "Y~X:Z")`), the `method` is choosen to be `"UPI"`, which indicates that the unconstrained product indicator approach should be used (Marsh et al., 2004, Kelava & Brandt, 2009), `search_method` is choosen to be `"adaptive"`, an alternative would be `"bruteforce"` (see documentation for more details), 10 adaptive search `steps` are chosen with a `power_modeling_method` of `"probit"`, which means the significance decisions per parameter are modeled via a probit regression model. `R` is the total number of replications fitted (here 1000 is small, this number should be increased for higher precision, values much smaller may create unwanted behaviour of the search algorithm as the power-model might be to plane, a good suggestion is $R=10^5$). `power_aim` is the desired power level (here 0.8) for which the adaptive algorithm is optimized (and for which the $N$ is found), `alpha` is the corresponding Type I error rate for the significance decision per replication (level of significance, here 0.05), `alpha_power_modeling` is the Type I error rate used within the power modeling process, i.e., the confidence band used to derive the lower bound of power that is then used to solve for $\hat{N}$ which further enables that  $\hat{N}$ will ensure the desired power rate with Type I error `alpha_power_modeling` divided by 2, `CORES` are the number of computer cpu cores used to estimate the models (here 1 is chosen, this number should be increased to reduce runtime).  As this is a random search algorithm, we need to set a seed for comparison: `seed`.
 
 The output object `Result_Power` is a list with the following objects:
 
@@ -128,6 +128,13 @@ The output object `Result_Power` is a list with the following objects:
 names(Result_Power)
 ```
 
+When we apply the `summary` function to the output of the `powerNLSEM` package, we get an overview of the most important information of the estimation with some visual highlights:
+
+```{r}
+summary(Result_Power)
+```
+
+The `Result_Power` contains far more information than that of the `summary`. 
 
 ```{r}
 Result_Power$N
@@ -136,32 +143,49 @@ Result_Power$N
 is the necessary sample size to ensure that the power is $\ge .8$.
 
 ```{r}
-dim(Result_Power$SigDecisions) # dimensions
-head(Result_Power$SigDecisions) # first 6 rows
+dim(Result_Power$est) # dimensions
+head(Result_Power$est) # first 6 rows
 ```
 
-is the data.frame including all significance descisions for every `POI`.
+is the data.frame including all parameter estimates from which the significance decision are computed using the corresponding standard errors in
+
+```{r}
+head(Result_Power$se) # first 6 rows
+```
+
+```{r}
+head(Result_Power$fitOK)
+```
+is a vector of logicals indicating whether the models converged and the results are trustworthy to be used in power modeling with
+
+```{r}
+Result_Power$convergenceRate
+```
+
+being the convergence rate.
+
 
 ```{r}
 Result_Power$N_trials
 ```
-are the calculated necessary sample sizes within every step of the smart search algorithm. This can be used for diagnistics and to check whether the algorithm has converged.
+are the calculated necessary sample sizes within every step of the adaptive search algorithm. This can be used for diagnistics and to check whether the algorithm has converged.
 
 ```{r}
 Result_Power$power
 Result_Power$beta
 Result_Power$alpha
 ```
-are the desired power level, the corresponding beta-error level (type II-error level: $\beta=\mathbb{P}(H_0|H_1)$, since Power = $1-\beta = \mathbb{P}(H_1 | H_1)$) and the desired alpha-error level (type I-error level: $\alpha=\mathbb{P}(H_1|H_0)$).
+are the desired power level, the corresponding beta-error level (type II-error level: $\beta=\mathbb{P}(H_0|H_1)$, since Power = $1-\beta = \mathbb{P}(H_1 | H_1)$) and the desired alpha-error level (Type I error level: $\alpha=\mathbb{P}(H_1|H_0)$).
 
 ```{r}
 Result_Power$search_method
 Result_Power$power_modeling_method
 Result_Power$runtime
-Result_Power$seed
+Result_Power$seed # general seed
+head(Result_Power$args$seeds) # seeds within each simulation
 ```
 
-include information on the search algorithm (here smart search, could also be "bruteforce"), the chosen method to model the power (here logit, i.e., logistic regression model), the runtime and the seed used for replicability.
+include information on the search algorithm (here "adaptive" search, could also be "bruteforce"), the chosen method to model the power (here "probit", i.e., probit regression model), the runtime, the general seed and the seeds used within each simulation (for replicability of e.g., non-convergences, etc.) used for replicability.
 
 ### Plots
 
@@ -171,32 +195,202 @@ The `powerNLSEM` package offers several plots, which visualize the power:
 plot(Result_Power)
 ```
 
-plots the model implied power for the `POI` vs. sample size `N`. The vertical line indicates the necessary sample size found be the smart search algorithm. The horizontal line indicates the desired power level.
+plots the model implied power for the `POI` vs. sample size `N`. The vertical line indicates the necessary sample size found be the adaptive search algorithm. The horizontal line indicates the desired power level.
 
  
 ```{r, fig.width=7, fig.height=5, fig.align='center'}
-plot(Result_Power, se = T)
+plot(Result_Power, se = TRUE)
 ```
 
 Within this plot the standard errors of the `power_modeling_method` are included into the plot.
 
 ```{r, fig.width=7, fig.height=5, fig.align='center'}
-plot(Result_Power, se = T, plot = "empirical")
+plot(Result_Power, se = TRUE, plot = "empirical")
 ```
 
 plots the empirical power per sample size and fits a LOESS fit to the resulting data.
 All plots indicate that the linear effect of Z has the smallest power.
 
+### Find other sample sizes from a fitted model
+
+One can also find other sample sizes for power values other than that the process has been optimized for by using the `reanalyze.powerNlSEM` function.
+
+```{r}
+reanalyse.powerNLSEM(Result_Power, 
+                     powerLevels = c(.5, .6, .7, .8, .9, .95))
+```
+
+These new values can also be plotted into the plot
+
+
+ 
+```{r, fig.width=7, fig.height=5, fig.align='center'}
+plot(Result_Power, se = TRUE, 
+     power_aim = c(.5, .6, .7, .8, .9, .95))
+```
+
+were we see that some of the power values actually fall out of the support for which sample sizes had been drawn indicating that these values might be less precise.
+
+Further, if we want more precision in the power modeling process we can alter `alpha_power_modeling` to a lower value.
+
+```{r, fig.width=7, fig.height=5, fig.align='center'}
+reanalyse.powerNLSEM(Result_Power, 
+                     powerLevels = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = .001)
+
+plot(Result_Power, se = TRUE, 
+     power_aim = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = .001)
+```
+
+If we wish to not use confidence bands in the power modeling process we can use `alpha_power_modeling = 1`.
+
+```{r, fig.width=7, fig.height=5, fig.align='center'}
+reanalyse.powerNLSEM(Result_Power, 
+                     powerLevels = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = 1)
+
+plot(Result_Power, se = TRUE, 
+     power_aim = c(.5, .6, .7, .8, .9),
+     alpha_power_modeling = 1)
+```
+
+If we choose `alpha_power_modeling = 1` within the adaptive search algorithm using `powerNLSEM`, then the sample sizes get optimized for that value. However, this is not adviced since in approx. half of the replications (retrials of the adaptive algorithm or brute algorithm) the sample size will actually be smaller than that resulting in the desired power rate.
+
+## Checking Results
+
+The required sample size can be double checked by running a simulation using just this sample size. This is presented for a linear SEM next, as other functions exist which can independently check the results. First we need to formulate the population model and the analysis model. We use a simplified version of the `model` used above. 
+
+```{r}
+populationModel <- "
+# measurement models
+X =~ 1*x1 + 0.8*x2 + 0.7*x3
+Y =~ 1*y1 + 0.85*y2 + 0.78*y3
+
+# structural models
+Y ~ 0.3*X 
+
+# residual variances
+Y~~.91*Y
+X~~1*X
+
+# measurement error variances
+x1~~.1*x1
+x2~~.2*x2
+x3~~.3*x3
+y1~~.5*y1
+y2~~.4*y2
+y3~~.3*y3
+"
+```
+
+Now we fit the MSPE to estimate power for the effect `"Y~X"` for this linear SEM. We use `method = "UPI"` as the product indicator approach without any nonlinear effects simplifies to standard SEM.
+
+```{r}
+Simple <- powerNLSEM(model = populationModel, POI = c("Y~X"), method = "UPI",
+                     search_method = "adaptive", steps = 10, 
+                     power_modeling_method = "probit",
+                     R = 2000, power_aim = .8, alpha = .05, 
+                     seed = 2024, CORES = 1)
+```
+
+The required sample size is
+
+```{r}
+Simple$N
+```
+
+Now, we simulate data for this particular sample size and compute the resulting power rate.
+
+```{r}
+VerifyRes <- powerNLSEM(model = populationModel, POI = c("Y~X"), method = "UPI",
+                       search_method = "bruteforce", Ns = Simple$N,
+                       R = 2000, seed = 2024, CORES = 1)
+```
+
+The argument `$powersPerN` gives the power rate per selected sample size which is what we need here:
+
+```{r}
+summary(VerifyRes)$powersPerN
+```
+
+```{r, echo=FALSE}
+P <- summary(VerifyRes)$powersPerN[1,2]
+Reps <- VerifyRes$args$R * VerifyRes$convergenceRate
+P_LB <- P - qnorm(.975)*sqrt(P*(1-P)/Reps)
+P_UB <- P + qnorm(.975)*sqrt(P*(1-P)/Reps)
+```
+
+This power rate is close to the desired power rate of $.8$. In fact the confidence interval
+[`r round(P_LB, 3)`, `r round(P_UB, 3)`] just excludes $.8$. This is desired, as the computed required sample size is derived from the lower bound of the confidence band around the predicted power rate. Hence, with `alpha_power_modeling = .05`, we have that in 2.5% of cases the computed sample size will result in a power rate smaller than the desired power rate of .8. Hence, in most cases, the computed power rate will be larger. With increasing `R` this slight overestimation becomes smaller.
+
+We now independently replicate this verification using the `simsem` package. First, we need to state an analysis model.
+The analysis model results by removing all `*` premultiplication of numbers.
+
+```{r}
+analysisModel <- "
+# measurement models
+X =~ 1*x1 + x2 + x3
+Y =~ 1*y1 + y2 + y3
+
+# structural models
+Y ~ X 
+
+# residual variances
+Y~~Y
+X~~X
+
+# measurement error variances
+x1~~x1
+x2~~x2
+x3~~x3
+y1~~y1
+y2~~y2
+y3~~y3
+"
+```
+
+Now we use the `sim` function of the `simsem` package (Pornprasertmanit et al., 2021). We fit 2000 data sets using stated population and analysis model. See documentation for further details.
+
+```{r, message=FALSE}
+library(simsem)
+SimSemList <- simsem::sim(nRep = 2000, model = analysisModel, 
+                        generate = populationModel, n = Simple$N, 
+                        lavaanfun = "sem", multicore = FALSE)
+```
+Then we compute the significance decision by computing the one-sided $p$-value and the power rate
+
+```{r}
+pvalues <- pnorm(as.matrix(SimSemList@coef) / as.matrix(SimSemList@se), 
+                 lower.tail = FALSE)[, "Y~X"]
+power <- mean(pvalues < .05)
+power
+```
+
+```{r, echo=FALSE}
+Psimsem_UB <- power + qnorm(.975)*sqrt(power*(1-power)/SimSemList@nRep)
+Psimsem_LB <- power - qnorm(.975)*sqrt(power*(1-power)/SimSemList@nRep)
+```
+
+This power rate, again, is close to the desired power rate of $.8$. In fact the confidence interval is
+[`r round(Psimsem_LB, 3)`, `r round(Psimsem_UB, 3)`] which includes $.8$. The required sample size was computed so the corresponding power rate approaches the desired power rate from above.
+
+
 ## Literature
 
-Jorgensen, T. D., Pornprasertmanit, S., Schoemann, A. M., & Rosseel, Y. (2022). `semTools`: Useful tools for structural equation modeling. R package version 0.5-6. Retrieved from [https://CRAN.R-project.org/package=semTools](https://CRAN.R-project.org/package=semTools)
+Jorgensen, T. D., Pornprasertmanit, S., Schoemann, A. M., & Rosseel, Y. (2022). _`semTools`: Useful tools for structural equation modeling_. R package version 0.5-6. Retrieved from [https://CRAN.R-project.org/package=semTools](https://CRAN.R-project.org/package=semTools)
 
 Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. _Review of Psychology, 16_(2), 123–131.
 
 Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. _Psychometrika, 65_(4), 457–474. [https://doi:10.1007/BF02296338](https://doi:10.1007/BF02296338)
 
+Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. _Psychological Methods, 9_(3), 275–300. <https://doi.org/10.1037/1082-989X.9.3.275>
+
+
 Muthén, L., & Muthén, B. (1998-2017). _Mplus user’s guide (Eighth ed.)_. Los Angeles, CA: Muthén & Muthén.
+
+Pornprasertmanit, S., Miller, P., Schoemann, A. M., Jorgensen, T. D. (2021). _simsem: SIMulated Structural Equation Modeling_. R package version 0.5-16, <https://CRAN.R-project.org/package=simsem>.
 
 Rosseel, Y. (2012). lavaan: An R package for structural equation modeling. _Journal of Statistical Software, 48_(2), 1–36.
 
-Schoemann, A. M., Miller, P., Pornprasertmanit, S., & Wu, W. (2014). Using Monte Carlo simulations to determine power and sample size for planned missing designs. _International Journal of Behavioral Development, 38_(5) 471–479. [https://doi:10.1177/0165025413515169](https://doi:10.1177/0165025413515169)
+Skrondal, A., & Laake, P. (2001). Regression among factor scores. _Psychometrika, 66_(4), 563-575. <https://doi.org/10.1007/BF02296196>

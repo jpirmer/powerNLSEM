@@ -8,11 +8,13 @@ powerNLSEM(
   model,
   POI,
   method,
+  test = "onesided",
   power_modeling_method = "probit",
-  search_method = "smart",
+  search_method = "adaptive",
   R = 2000,
   power_aim = 0.8,
   alpha = 0.05,
+  alpha_power_modeling = 0.05,
   CORES = max(c(parallel::detectCores() - 2, 1)),
   verbose = TRUE,
   seed = NULL,
@@ -24,17 +26,21 @@ powerNLSEM(
 
 \item{POI}{Parameter Of Interest as a vector of strings. Must be in lavaan-syntax without any spaces. Nonlinear effects should have the same ordering as in model.}
 
-\item{method}{Method used to fit to the data. Default to \code{"LMS"} (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge). Alternatives are \code{"SR"}, for using scale means (i.e., scale regression/path modeling).}
+\item{method}{Method used to fit to the data. Implemented methods are \code{"LMS"} (Klein & Moosbrugger, 2000) (requires an installation of \code{Mplus} and the \code{MplusAutomation} pacakge), \code{"UPI"} (Kelava & Brandt, 2009, Marsh et al., 2004) for the unconstrained product indicator approach, \code{"FSR"} (Ng and Chan, 2020) for the naïve factor score approach, and \code{"SR"}, for using scale means (i.e., scale regression/path modeling).}
+
+\item{test}{Should the parameter be tested with a directed hypothesis (onesided) or with an undirected hypothesis (twosided, also equivalent to Wald-Test for single parameter). Default to \code{"onesided"}.}
 
 \item{power_modeling_method}{Power modeling method used to model significant parameter estimates. Default to \code{"probit"} indicating glm with probit link function with sqrt(n) as predictor. Alternative is \code{"logit"}.}
 
-\item{search_method}{String stating the search method. Default to \code{"smart"}. Alternative is \code{"bruteforce"}.}
+\item{search_method}{String stating the search method. Default to \code{"adaptive"} (synonyme is \code{"smart"}). Alternative is \code{"bruteforce"}.}
 
 \item{R}{Total number of models to be fitted. Higher number results in higher precision and longer runtime. Default to 2000.}
 
 \item{power_aim}{Minimal power value to approximate. Default to \code{.8}.}
 
-\item{alpha}{Type I-error rate. Default to \code{.05}.}
+\item{alpha}{Type I-error rate for significance decision. Default to \code{.05}.}
+
+\item{alpha_power_modeling}{Type I-error rate for confidence band around predicted power rate. Used to ensure that the computed \code{N} keeps the desired power value (with the given Type I-error rate \code{alpha_power_modeling} divided by 2). If set to 1, no confidence band is used. Default to \code{.05}.}
 
 \item{CORES}{Number of cores used for parallelization. Default to number of available cores - 2.}
 
@@ -44,6 +50,25 @@ powerNLSEM(
 
 \item{...}{Additional arguments passed on to the search functions.}
 }
+\value{
+Returns an list object of class \code{powerNLSEM}.
+}
 \description{
 powerNLSEM function
+}
+\references{
+Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. \emph{Psychometrika, 65}(4), 457–474. \url{https://doi.org/10.1007/BF02296338}
+
+Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. \emph{Review of Psychology, 16}(2), 123–132.
+
+Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. \emph{Structural Equation Modeling, 17}(3), 374–391. \url{https://doi.org/10.1080/10705511.2010.488999}
+
+Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. \emph{Structural Equation Modeling, 13}(4), 497–519. \url{https://doi.org/10.1207/s15328007sem1304_1}
+
+Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. \emph{Psychological Methods, 9}(3), 275–300. \url{https://doi.org/10.1037/1082-989X.9.3.275}
+
+Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 27}(4), 629–648. \url{https://doi.org/10.1080/10705511.2019.1664304}.
+}
+\seealso{
+For further details for specific uses see corresponding functions: \code{\link[=power_search]{power_search()}} for all inputs possible, \code{\link[=UPI]{UPI()}} for specifics for the unconstrained product indicator approach, \code{\link[=LMS]{LMS()}} for the latent moderated structured equations approach, \code{\link[=FSR]{FSR()}} for factor score approaches, \code{\link[=SR]{SR()}} for scale regression approaches.
 }

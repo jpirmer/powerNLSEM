@@ -14,7 +14,7 @@ Use `build_vignettes = T` to be able to see the documentation linked in "Getting
 
 
 ### Install the Submitted Version from GitHub
-If you wish to install the version of the package as it was submitted, please use
+If you wish to install the version of the package as it was submitted in 2023, please use
 
 ```{r, eval=FALSE}
 install.packages("devtools")
