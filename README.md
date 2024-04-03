@@ -14,7 +14,21 @@ Use `build_vignettes = T` to be able to see the documentation linked in "Getting
 
 
 ### Install the Submitted Version from GitHub
-If you wish to install the version of the package as it was submitted in 2023, please use
+
+#### 2024
+If you wish to install the version of the package as it was submitted in 2024, please use
+
+```{r, eval=FALSE}
+install.packages("devtools")
+devtools::install_github("jpirmer/powerNLSEM", build_vignettes = TRUE, 
+                         ref = "Submitted2024")
+```
+
+`Submitted2024` is the branch name.
+
+#### 2023
+
+If you wish to install the much older version of the package as it was submitted in 2023, please use
 
 ```{r, eval=FALSE}
 install.packages("devtools")
