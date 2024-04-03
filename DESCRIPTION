@@ -29,13 +29,13 @@ Imports:
     numDeriv,
     pbapply,
     rlang (>= 1.1.0),
-    stringr,
-    simsem
+    stringr
 Suggests: 
     knitr,
     MplusAutomation (>= 0.7-2),
     rmarkdown,
-    semTools
+    semTools,
+    simsem
 VignetteBuilder: 
     knitr
 Encoding: UTF-8

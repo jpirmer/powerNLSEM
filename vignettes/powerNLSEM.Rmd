@@ -291,7 +291,7 @@ Simple <- powerNLSEM(model = populationModel, POI = c("Y~X"), method = "UPI",
                      search_method = "adaptive", steps = 10, 
                      power_modeling_method = "probit",
                      R = 2000, power_aim = .8, alpha = .05, 
-                     seed = 2024)
+                     seed = 2024, CORES = 1)
 ```
 
 The required sample size is
@@ -305,7 +305,7 @@ Now, we simulate data for this particular sample size and compute the resulting 
 ```{r}
 VerifyRes <- powerNLSEM(model = populationModel, POI = c("Y~X"), method = "UPI",
                        search_method = "bruteforce", Ns = Simple$N,
-                       R = 2000, seed = 2024)
+                       R = 2000, seed = 2024, CORES = 1)
 ```
 
 The argument `$powersPerN` gives the power rate per selected sample size which is what we need here:
@@ -352,16 +352,17 @@ y3~~y3
 
 Now we use the `sim` function of the `simsem` package (Pornprasertmanit et al., 2021). We fit 2000 data sets using stated population and analysis model. See documentation for further details.
 
-```{r}
+```{r, message=FALSE}
+library(simsem)
 SimSemList <- simsem::sim(nRep = 2000, model = analysisModel, 
                         generate = populationModel, n = Simple$N, 
-                        lavaanfun = "sem", multicore = TRUE)
+                        lavaanfun = "sem", multicore = FALSE)
 ```
 Then we compute the significance decision by computing the one-sided $p$-value and the power rate
 
 ```{r}
 pvalues <- pnorm(as.matrix(SimSemList@coef) / as.matrix(SimSemList@se), 
-                 lower.tail = FALSE)[, 5]
+                 lower.tail = FALSE)[, "Y~X"]
 power <- mean(pvalues < .05)
 power
 ```
