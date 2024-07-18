@@ -26,15 +26,3 @@ devtools::install_github("jpirmer/powerNLSEM", build_vignettes = TRUE,
 
 `Submitted2024` is the branch name.
 
-#### 2023
-
-If you wish to install the much older version of the package as it was submitted in 2023, please use
-
-```{r, eval=FALSE}
-install.packages("devtools")
-devtools::install_github("jpirmer/powerNLSEM", build_vignettes = TRUE, 
-                         ref = "Submitted2023")
-```
-
-`Submitted2023` is the branch name.
-

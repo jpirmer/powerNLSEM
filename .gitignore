@@ -46,3 +46,4 @@ Ideas and Checks powerNLSEM.R
 .Rbuildignore
 .gitignore
 Mplus Run Models.log
+*.DS_Store
