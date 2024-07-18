@@ -43,7 +43,6 @@ vignettes/*.pdf
 /temp
 # specific files to ignore:
 Ideas and Checks powerNLSEM.R
-powerNLSEM.Rproj
 .Rbuildignore
 .gitignore
 Mplus Run Models.log
