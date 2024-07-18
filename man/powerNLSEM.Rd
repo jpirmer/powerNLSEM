@@ -57,17 +57,17 @@ Returns an list object of class \code{powerNLSEM}.
 powerNLSEM function
 }
 \references{
-Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. \emph{Psychometrika, 65}(4), 457–474. \url{https://doi.org/10.1007/BF02296338}
+Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. \emph{Psychometrika, 65}(4), 457–474. \doi{10.1007/BF02296338}
 
 Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. \emph{Review of Psychology, 16}(2), 123–132.
 
-Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. \emph{Structural Equation Modeling, 17}(3), 374–391. \url{https://doi.org/10.1080/10705511.2010.488999}
+Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. \emph{Structural Equation Modeling, 17}(3), 374–391. \doi{10.1080/10705511.2010.488999}
 
-Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. \emph{Structural Equation Modeling, 13}(4), 497–519. \url{https://doi.org/10.1207/s15328007sem1304_1}
+Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. \emph{Structural Equation Modeling, 13}(4), 497–519. \doi{10.1207/s15328007sem1304_1}
 
-Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. \emph{Psychological Methods, 9}(3), 275–300. \url{https://doi.org/10.1037/1082-989X.9.3.275}
+Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. \emph{Psychological Methods, 9}(3), 275–300. \doi{10.1037/1082-989X.9.3.275}
 
-Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 27}(4), 629–648. \url{https://doi.org/10.1080/10705511.2019.1664304}.
+Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 27}(4), 629–648. \doi{10.1080/10705511.2019.1664304}.
 }
 \seealso{
 For further details for specific uses see corresponding functions: \code{\link[=power_search]{power_search()}} for all inputs possible, \code{\link[=UPI]{UPI()}} for specifics for the unconstrained product indicator approach, \code{\link[=LMS]{LMS()}} for the latent moderated structured equations approach, \code{\link[=FSR]{FSR()}} for factor score approaches, \code{\link[=SR]{SR()}} for scale regression approaches.

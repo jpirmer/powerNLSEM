@@ -32,11 +32,11 @@ Unconstrained Product Indicator approach by Marsh et al. (2004), with extensions
 \references{
 Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. \emph{Review of Psychology, 16}(2), 123–132.
 
-Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. \emph{Structural Equation Modeling, 17}(3), 374–391. \url{https://doi.org/10.1080/10705511.2010.488999}
+Lin, G. C., Wen, Z., Marsh, H. W., & Lin, H. S. (2010). Structural equation models of latent interactions: Clarification of orthogonalizing and double-mean-centering strategies. \emph{Structural Equation Modeling, 17}(3), 374–391. \doi{10.1080/10705511.2010.488999}
 
-Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. \emph{Structural Equation Modeling, 13}(4), 497–519. \url{https://doi.org/10.1207/s15328007sem1304_1}
+Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. \emph{Structural Equation Modeling, 13}(4), 497–519. \doi{10.1207/s15328007sem1304_1}
 
-Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. \emph{Psychological Methods, 9}(3), 275–300. \url{https://doi.org/10.1037/1082-989X.9.3.275}
+Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. \emph{Psychological Methods, 9}(3), 275–300. \doi{10.1037/1082-989X.9.3.275}
 
-Marsh, H. W.,  Wen, Z., Hau, K. T., Little, T. D., Bovaird, J. A., & Widaman, K. F. (2007). Unconstrained Structural Equation Models of Latent Interactions: Contrasting Residual- and Mean-Centered Approaches. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 14}(4), 570-580. \url{https://doi.org/10.1080/10705510701303921}
+Marsh, H. W.,  Wen, Z., Hau, K. T., Little, T. D., Bovaird, J. A., & Widaman, K. F. (2007). Unconstrained Structural Equation Models of Latent Interactions: Contrasting Residual- and Mean-Centered Approaches. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 14}(4), 570-580. \doi{10.1080/10705510701303921}
 }

@@ -28,7 +28,7 @@
 #' @param liberalInspection Logical whether the inspection of estimation truthworthiness should be very liberal (i.e., allowing for non-positive definite Hessians in standard error estimation or non-positive residual covariance matrices or latent covariance matrices). Default to \code{FALSE}. Being liberal is not adviced and should be checked for a single data set!
 #' @param FSmethod Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.
 #' @param seeds Seeds for reproducibility.
-#' @references Wolf, E. J., Harrington, K. M., Clark, S. L., & Miller, M. W. (2013). Sample Size Requirements for Structural Equation Models: An Evaluation of Power, Bias, and Solution Propriety. _Educational and Psychological Measurement, 76_(6), 913–934. <https://doi.org/10.1177/0013164413495237>
+#' @references Wolf, E. J., Harrington, K. M., Clark, S. L., & Miller, M. W. (2013). Sample Size Requirements for Structural Equation Models: An Evaluation of Power, Bias, and Solution Propriety. _Educational and Psychological Measurement, 76_(6), 913–934. \doi{10.1177/0013164413495237}
 #' @export
 
 power_search <- function(POI,

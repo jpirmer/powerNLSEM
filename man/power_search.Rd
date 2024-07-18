@@ -90,5 +90,5 @@ power_search(
 The function that initializes the search process. The \code{powerNLSEM} function actually is a wrapper function for \code{power_search}.
 }
 \references{
-Wolf, E. J., Harrington, K. M., Clark, S. L., & Miller, M. W. (2013). Sample Size Requirements for Structural Equation Models: An Evaluation of Power, Bias, and Solution Propriety. \emph{Educational and Psychological Measurement, 76}(6), 913–934. \url{https://doi.org/10.1177/0013164413495237}
+Wolf, E. J., Harrington, K. M., Clark, S. L., & Miller, M. W. (2013). Sample Size Requirements for Structural Equation Models: An Evaluation of Power, Bias, and Solution Propriety. \emph{Educational and Psychological Measurement, 76}(6), 913–934. \doi{10.1177/0013164413495237}
 }
