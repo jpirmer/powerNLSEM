@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 ```
 
 This is an `R` package to use the model-impled simulation-based power estimation (MSPE) method to find the minimum required sample size for a given power within a nonlinear Structural Equation Model (NLSEM) for several parameters of interest (POI). 
-<!-- The package was created as a supplement to the publication **INSERT PUBLICATION HERE: Irmer et al. (2023)**. -->
+The package was created as a supplement to the publication **Irmer et al. (in press)** and its theory is based on Irmer et al. (2024). Here, a probit regression model with $\sqrt{n}$ as a predictor is fit to significance decisions for single parameters (using the $z$-test) within simulated data to describe the relationship between power and sample size $n$ (Irmer et al., 2024).
 
 ## Install the latest working version from Github
 
@@ -378,6 +378,10 @@ This power rate, again, is close to the desired power rate of $.8$. In fact the 
 
 
 ## Literature
+
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024). A General Model-Implied Simulation-Based Power Estimation Method for Correctly and Misspecfied Models: Applications to Nonlinear and Linear Structural Equation Models. [Submitted for Publication] <https://doi.org/10.31219/osf.io/pe5bj>
+
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (in press). Estimating Power in Complex Nonlinear Structural Equation Modeling Including Moderation Effects: The `powerNLSEM R`-Package. _Behavior Research Methods._ 
 
 Jorgensen, T. D., Pornprasertmanit, S., Schoemann, A. M., & Rosseel, Y. (2022). _`semTools`: Useful tools for structural equation modeling_. R package version 0.5-6. Retrieved from [https://CRAN.R-project.org/package=semTools](https://CRAN.R-project.org/package=semTools)
 
