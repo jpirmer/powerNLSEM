@@ -26,6 +26,9 @@ simulateNLSEM(
 
 \item{seed}{a seed for reproducability. Default to \code{NULL}.}
 }
+\value{
+Returns a \code{data.frame} of a simulated NLSEM.
+}
 \description{
 simulate data from lavModel object
 }

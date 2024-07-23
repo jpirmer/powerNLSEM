@@ -57,7 +57,7 @@ Returns an list object of class \code{powerNLSEM}.
 powerNLSEM function
 }
 \examples{
-\dontrun{
+\donttest{
 # write model in lavaan syntax
 model <- "
 # measurement models

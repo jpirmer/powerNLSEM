@@ -25,7 +25,7 @@
 #' @references Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. _Psychological Methods, 9_(3), 275–300. \doi{10.1037/1082-989X.9.3.275}
 #' @references Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. _Structural Equation Modeling: A Multidisciplinary Journal, 27_(4), 629–648. \doi{10.1080/10705511.2019.1664304}.
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # write model in lavaan syntax
 #' model <- "
 #' # measurement models
@@ -84,8 +84,7 @@ powerNLSEM <- function(model, POI,
 {
      call <- match.call()
 
-     if(is.null(seed)) seed <- sample(1:10^9, size = 1)
-     set.seed(seed)
+     if(!is.null(seed)) set.seed(seed)
      seeds <- sample(1:10^9, size = R)
      t0 <- proc.time()
 

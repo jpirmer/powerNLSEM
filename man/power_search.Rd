@@ -86,6 +86,9 @@ power_search(
 
 \item{seeds}{Seeds for reproducibility.}
 }
+\value{
+Returns a \code{list} that includes the results on model-implied simulation-based power estimation.
+}
 \description{
 The function that initializes the search process. The \code{powerNLSEM} function actually is a wrapper function for \code{power_search}.
 }

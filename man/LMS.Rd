@@ -23,6 +23,9 @@ LMS(
 
 \item{algorithm}{algorithm to use. Default to INTEGRATION.}
 }
+\value{
+Returns a \code{data.frame} that includes parameter estimates estimated using LMS.
+}
 \description{
 Latent moderated strctured equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
 }

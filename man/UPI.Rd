@@ -26,6 +26,9 @@ UPI(
 
 \item{liberalInspection}{Logical whether the inspection of estimation truthworthiness should be very liberal (i.e., allowing for non-positive definite Hessians in standard error estimation or non-positive residual covariance matrices or latent covariance matrices). Default to \code{FALSE}. Being liberal is not adviced and should be checked for a single data set!}
 }
+\value{
+Returns a \code{data.frame} that includes parameter estimates estimated using UPI.
+}
 \description{
 Unconstrained Product Indicator approach by Marsh et al. (2004), with extensions by Kelava and Brandt (2009)
 }

@@ -15,7 +15,7 @@
 #' @import stats
 #' @import utils
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # write model in lavaan syntax
 #' model <- "
 #' # measurement models

@@ -3,6 +3,7 @@
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
 #' @param data_transformations Data transformations
+#' @return Returns a \code{data.frame} that includes parameter estimates estimated using SR.
 #' @export
 
 

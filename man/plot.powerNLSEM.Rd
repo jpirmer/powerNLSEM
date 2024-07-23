@@ -48,7 +48,7 @@ Returns \code{ggplot} object of the type specified in plot.
 plot powerNLSEM object
 }
 \examples{
-\dontrun{
+\donttest{
 # write model in lavaan syntax
 model <- "
 # measurement models

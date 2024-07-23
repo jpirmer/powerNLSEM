@@ -22,7 +22,7 @@ summary of powerNLSEM object
 Summary function for powerNLSEM objects
 }
 \examples{
-\dontrun{
+\donttest{
 # write model in lavaan syntax
 model <- "
 # measurement models

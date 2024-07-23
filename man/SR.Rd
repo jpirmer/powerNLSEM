@@ -13,6 +13,9 @@ SR(lavModel_Analysis, data, data_transformations = NULL)
 
 \item{data_transformations}{Data transformations}
 }
+\value{
+Returns a \code{data.frame} that includes parameter estimates estimated using SR.
+}
 \description{
 Scale Regression approach
 }

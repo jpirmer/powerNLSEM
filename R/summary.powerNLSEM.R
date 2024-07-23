@@ -6,7 +6,7 @@
 #' @param ... Further arguments to use in \code{summary}.
 #' @return summary of powerNLSEM object
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # write model in lavaan syntax
 #' model <- "
 #' # measurement models

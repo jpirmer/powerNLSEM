@@ -15,6 +15,9 @@ FSR(lavModel_Analysis, data, FSmethod = "SL", data_transformations = NULL)
 
 \item{data_transformations}{Data transformations}
 }
+\value{
+Returns a \code{data.frame} that includes parameter estimates estimated using FSR.
+}
 \description{
 Factor Score Regression approach
 }

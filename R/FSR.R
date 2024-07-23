@@ -4,6 +4,7 @@
 #' @param data set to fit
 #' @param FSmethod Method to be used to extract factor scores. Default to \code{"SL"} for the Skrondal and Laake approach that uses regression (\code{"regression"}) factor scores for the independendent variables and \code{"Bartlett"} factor scores for the dependent variables.
 #' @param data_transformations Data transformations
+#' @return Returns a \code{data.frame} that includes parameter estimates estimated using FSR.
 #' @references **Similar to:** Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. _Structural Equation Modeling: A Multidisciplinary Journal, 27_(4), 629–648. \doi{10.1080/10705511.2019.1664304}.
 #' @references Skrondal, A., & Laake, P. (2001). Regression among factor scores. _Psychometrika, 66_(4), 563-575. \doi{10.1007/BF02296196}
 #' @export
