@@ -9,6 +9,7 @@ LMS(
   data,
   data_transformations = NULL,
   prefix = 1,
+  pathLMS = tempdir(),
   algorithm = "INTEGRATION"
 )
 }
@@ -20,6 +21,8 @@ LMS(
 \item{data_transformations}{Object containing info on possible data transformations.}
 
 \item{prefix}{an arbitrary prefix for the data set. This prevents issues when using parallelization and Mplus.}
+
+\item{pathLMS}{path where (temporal) data and scripts for running LMS using Mplus are stored (using \code{MplusAutomation}). Default to \code{NULL}, then \code{tempdir()} is used.}
 
 \item{algorithm}{algorithm to use. Default to INTEGRATION.}
 }

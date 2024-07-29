@@ -5,22 +5,25 @@ sim_and_fit <- function(n, POI, method,
                         lavModel, lavModel_Analysis,
                         lavModel_attributes, matrices, data_transformations,
                         prefix,
-                        sim_seed,
+                        pathLMS = tempdir(),
+                        sim_seed = NULL,
                         FSmethod = "SL",
                         matchPI =TRUE,
                         PIcentering = "doubleMC",
                         liberalInspection = FALSE,
                         ...){
-     set.seed(sim_seed); df_POI <- data.frame("matchLabel" = POI)
+     df_POI <- data.frame("matchLabel" = POI)
      data <- simulateNLSEM(n = n, lavModel = lavModel,
                            lavModel_attributes = lavModel_attributes,
-                           matrices = matrices)
+                           matrices = matrices, seed = sim_seed,
+                           appendLVs = FALSE)
      if(tolower(method) == "lms")
      {
           # Mplus only works with upper cases: overwrite df_POI
           df_POI <- data.frame("matchLabel" = toupper(POI))
           fit <- try(LMS(lavModel_Analysis = lavModel_Analysis, data = data,
-                         data_transformations = data_transformations, prefix = prefix),
+                         data_transformations = data_transformations, prefix = prefix,
+                         pathLMS = pathLMS),
                      silent = TRUE)
      }else if(tolower(method) %in% c("sr", "reg")){
           fit <- try(SR(lavModel_Analysis = lavModel_Analysis, data = data,

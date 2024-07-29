@@ -4,6 +4,7 @@
 #' @param data_transformations Object containing info on possible data transformations.
 #' @param prefix an arbitrary prefix for the data set. This prevents issues when using parallelization and Mplus.
 #' @param algorithm algorithm to use. Default to INTEGRATION.
+#' @param pathLMS path where (temporal) data and scripts for running LMS using Mplus are stored (using \code{MplusAutomation}). Default to \code{NULL}, then \code{tempdir()} is used.
 #' @import stats
 #' @importFrom stringr str_split
 #' @importFrom stringr str_replace
@@ -15,13 +16,14 @@
 
 LMS <- function(lavModel_Analysis, data,
                 data_transformations = NULL,
-                prefix = 1, algorithm = "INTEGRATION")
+                prefix = 1, pathLMS = tempdir(),
+                algorithm = "INTEGRATION")
 {
-     if(!dir.exists("temp")) dir.create("temp/")
+     if(!dir.exists(paste0(pathLMS, "/temp"))) dir.create(paste0(pathLMS, "/temp/"))
 
-     input_file <- paste0("temp/", prefix, "_runScript_LMS.inp")
-     output_file <- paste0("temp/", prefix, "_runScript_LMS.out")
-     data_file <- paste0("temp/", prefix, "_data_temp.dat")
+     input_file <- paste0(pathLMS, "/temp/", prefix, "_runScript_LMS.inp")
+     output_file <- paste0(pathLMS, "/temp/", prefix, "_runScript_LMS.out")
+     data_file <- paste0(pathLMS, "/temp/", prefix, "_data_temp.dat")
      lavModel_Analysis_LMS <- lavModel_Analysis
 
      # Mplus only works with upper cases!

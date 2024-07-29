@@ -22,6 +22,7 @@ smart_search <- function(POI,
                          liberalInspection = FALSE,
                          seeds,
                          test = "onesided",
+                         pathLMS = tempdir(),
                          ...)
 {
      dotdotdot <- list(...)
@@ -88,6 +89,7 @@ smart_search <- function(POI,
                                                                                         matrices = matrices,
                                                                                         data_transformations = data_transformations,
                                                                                         prefix = ni,
+                                                                                        pathLMS = pathLMS,
                                                                                         FSmethod = FSmethod,
                                                                                         matchPI = matchPI,
                                                                                         PIcentering = PIcentering,

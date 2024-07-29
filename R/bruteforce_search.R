@@ -19,6 +19,7 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
                               liberalInspection = FALSE,
                               seeds,
                               test = "onesided",
+                              pathLMS = tempdir(),
                               ...)
 {
      i <- 1; switchStep <- 0; distRj <- "equal"; steps <- 1 # 1 Trial for now
@@ -84,6 +85,7 @@ bruteforce_search <- function(POI, Ns = NULL, N_start = nrow(lavModel_Analysis)*
                                                                                    matrices = matrices,
                                                                                    data_transformations = data_transformations,
                                                                                    prefix = ni,
+                                                                                   pathLMS = pathLMS,
                                                                                    FSmethod = FSmethod,
                                                                                    matchPI = matchPI,
                                                                                    PIcentering = PIcentering,

@@ -84,8 +84,12 @@ powerNLSEM <- function(model, POI,
 {
      call <- match.call()
 
-     if(!is.null(seed)) set.seed(seed)
-     seeds <- sample(1:10^9, size = R)
+     if(!is.null(seed)){
+          set.seed(seed)
+          seeds <- sample(1:10^9, size = R)
+     }else{
+          seeds <- NULL
+     }
      t0 <- proc.time()
 
      # check whether needed packages are installed
@@ -164,6 +168,11 @@ powerNLSEM <- function(model, POI,
           constrainRelChange <- dotdotdot$constrainRelChange
      }else{
           constrainRelChange <- TRUE
+     }
+     if(!is.null(dotdotdot$pathLMS)){
+          pathLMS <- dotdotdot$pathLMS
+     }else{
+          pathLMS <- tempdir()
      }
 
      # check input ------

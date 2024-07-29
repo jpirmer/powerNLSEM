@@ -30,7 +30,8 @@ power_search(
   PIcentering = "doubleMC",
   liberalInspection = FALSE,
   constrainRelChange = TRUE,
-  seeds
+  seeds,
+  pathLMS = tempdir()
 )
 }
 \arguments{
@@ -85,6 +86,8 @@ power_search(
 \item{constrainRelChange}{Logical whether the change in the bounds of the interval for N using the smart algorithm should be constrained. This prevents divergence (which is especially an issue for small effect sizes and small \code{R}) but results in biased estimates if the number of steps is too small. Default to \code{TRUE}.}
 
 \item{seeds}{Seeds for reproducibility.}
+
+\item{pathLMS}{path where (temporal) data and scripts for running LMS using Mplus are stored (using \code{MplusAutomation}). Default to \code{NULL}, then \code{tempdir()} is used.}
 }
 \value{
 Returns a \code{list} that includes the results on model-implied simulation-based power estimation.
