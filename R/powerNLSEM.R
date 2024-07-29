@@ -24,7 +24,7 @@
 #' @references Little, T. D., Bovaird, J. A., & Widaman, K. F. (2006). On the merits of orthogonalizing powered and product terms: Implications for modeling interactions among latent variables. _Structural Equation Modeling, 13_(4), 497–519. \doi{10.1207/s15328007sem1304_1}
 #' @references Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent interactions: Evaluation of alternative estimation strategies and indicator construction. _Psychological Methods, 9_(3), 275–300. \doi{10.1037/1082-989X.9.3.275}
 #' @references Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. _Structural Equation Modeling: A Multidisciplinary Journal, 27_(4), 629–648. \doi{10.1080/10705511.2019.1664304}.
-#' @references Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024).  _Behavior Research Methods, 0_(00), Advance Online Publication. \doi{10.3758/s13428-024-02476-3}
+#' @references Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024).  _Behavior Research Methods, 0_(00), Advance Online Publication.
 #' @examples
 #' \donttest{
 #' # write model in lavaan syntax

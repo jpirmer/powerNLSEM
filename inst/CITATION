@@ -1,47 +1,41 @@
 citHeader("To cite package 'powerNLSEM' in publications, please use:")
 
-citEntry(
-     entry = "Article",
-     title = "Estimating Power in Complex Nonlinear Structural Equation Modeling Including Moderation Effects: The powerNLSEM R-Package",
-     author = personList(
-          as.person("Julien P. Irmer"),
-          as.person("Andreas G. Klein"),
-          as.person("Karin Schermelleh-Engel")
-     ),
-     year = "2024",
-     journal = "Behavior Research Methods",
-     volume = "0",
-     number = "00",
-     pages = "Advance Online Publication",
-     doi = "10.3758/s13428-024-02476-3"
+bibentry(
+  bibtype = "Article",
+  title = "Estimating Power in Complex Nonlinear Structural Equation Modeling Including Moderation Effects: The powerNLSEM R-Package",
+  author = c(
+    person("Julien P.", "Irmer"),
+    person("Andreas G.", "Klein"),
+    person("Karin", "Schermelleh-Engel")
+  ),
+  year = "2024",
+  journal = "Behavior Research Methods",
+  volume = "0",
+  number = "00",
+  pages = "Advance Online Publication"
 )
 
-
-citEntry(
-     entry = "Article",
-     title = "A General Model-Implied Simulation-Based Power Estimation Method for Correctly and Misspecfied Models: Applications to Nonlinear and Linear Structural Equation Models.",
-     author = personList(
-          as.person("Julien P. Irmer"),
-          as.person("Andreas G. Klein"),
-          as.person("Karin Schermelleh-Engel")
-     ),
-     year = "2024",
-     journal = "Submitted for Publication",
-     volume = "0",
-     number = "00",
-     pages = "Submitted for Publication",
-     doi = "10.31219/osf.io/pe5bj"
+bibentry(
+  bibtype = "Article",
+  title = "A General Model-Implied Simulation-Based Power Estimation Method for Correctly and Misspecfied Models: Applications to Nonlinear and Linear Structural Equation Models.",
+  author = c(
+    person("Julien P.", "Irmer"),
+    person("Andreas G.", "Klein"),
+    person("Karin", "Schermelleh-Engel")
+  ),
+  year = "2024",
+  journal = "Submitted for Publication",
+  volume = "0",
+  number = "00",
+  pages = "Submitted for Publication",
+  doi = "10.31219/osf.io/pe5bj"
 )
 
-
-
-citEntry(
-     entry = "Manual",
-     title = "Simulation-Based Power Estimation (MSPE) for Nonlinear SEM",
-     author = personList(
-          as.person("Julien P. Irmer [aut, cre]")
-     ),
-     year = "2024"
+bibentry(
+  bibtype = "Manual",
+  title = "Simulation-Based Power Estimation (MSPE) for Nonlinear SEM",
+  author = person("Julien P.", "Irmer", role = c("aut", "cre")),
+  year = "2024"
 )
 
 citFooter("Thank you for using 'powerNLSEM'!")
