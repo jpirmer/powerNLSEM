@@ -97,4 +97,6 @@ The function that initializes the search process. The \code{powerNLSEM} function
 }
 \references{
 Wolf, E. J., Harrington, K. M., Clark, S. L., & Miller, M. W. (2013). Sample Size Requirements for Structural Equation Models: An Evaluation of Power, Bias, and Solution Propriety. \emph{Educational and Psychological Measurement, 76}(6), 913–934. \doi{10.1177/0013164413495237}
+
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024).  \emph{Behavior Research Methods, 0}(00), Advance Online Publication. \doi{10.3758/s13428-024-02476-3}
 }

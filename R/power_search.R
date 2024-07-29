@@ -31,6 +31,7 @@
 #' @param pathLMS path where (temporal) data and scripts for running LMS using Mplus are stored (using \code{MplusAutomation}). Default to \code{NULL}, then \code{tempdir()} is used.
 #' @return Returns a \code{list} that includes the results on model-implied simulation-based power estimation.
 #' @references Wolf, E. J., Harrington, K. M., Clark, S. L., & Miller, M. W. (2013). Sample Size Requirements for Structural Equation Models: An Evaluation of Power, Bias, and Solution Propriety. _Educational and Psychological Measurement, 76_(6), 913–934. \doi{10.1177/0013164413495237}
+#' @references Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024).  _Behavior Research Methods, 0_(00), Advance Online Publication. \doi{10.3758/s13428-024-02476-3}
 #' @export
 
 power_search <- function(POI,

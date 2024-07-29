@@ -3,6 +3,7 @@
 * Use temporal directory for `LMS` fitted using `Mplus` per default (as suggested in the submission process to CRAN).
 * Adapt package to comply with CRAN's submission guidelines.
 * Adapt code to not use seeds per default.
+* Add citation file.
 
 ### powerNLSEM 0.1.0
 

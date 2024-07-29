@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 ```
 
 This is an `R` package to use the model-impled simulation-based power estimation (MSPE) method to find the minimum required sample size for a given power within a nonlinear Structural Equation Model (NLSEM) for several parameters of interest (POI). 
-The package was created as a supplement to the publication **Irmer et al. (in press)** and its theory is based on Irmer et al. (2024). Here, a probit regression model with $\sqrt{n}$ as a predictor is fit to significance decisions for single parameters (using the $z$-test) within simulated data to describe the relationship between power and sample size $n$ (Irmer et al., 2024).
+The package was created as a supplement to the publication **Irmer et al. (2024b)** and its theory is based on Irmer et al. (2024a). Here, a probit regression model with $\sqrt{n}$ as a predictor is fit to significance decisions for single parameters (using the $z$-test) within simulated data to describe the relationship between power and sample size $n$ (Irmer et al., 2024b).
 
 ## Install the latest working version from Github
 
@@ -87,7 +87,7 @@ States the structural model of the NLSEM as $Y=.3X + .2Z + .2XZ + \varepsilon_Y$
 
 ### Adaptive Search
 
-After stating the model, we can use the `powerNLSEM` function to use the adaptive search algorithm to find the optimal sample size for our desired power for a given Type I error rate for our latent moderation model using the product indicator approach (UPI, with matched products). For computational reasons a very small number of replications is used and only two steps are utilized (for further information see also Irmer et al., in press): 
+After stating the model, we can use the `powerNLSEM` function to use the adaptive search algorithm to find the optimal sample size for our desired power for a given Type I error rate for our latent moderation model using the product indicator approach (UPI, with matched products). For computational reasons a very small number of replications is used and only two steps are utilized (for further information see also Irmer et al., 2024b): 
 
 ```{r, warning=FALSE,error=FALSE, eval=TRUE, warning=FALSE}
 Result_Power <- powerNLSEM(model = model, 
@@ -336,9 +336,9 @@ This power rate is close to the desired power rate of $.8$. In fact the confiden
 
 ## Literature
 
-Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024). A General Model-Implied Simulation-Based Power Estimation Method for Correctly and Misspecfied Models: Applications to Nonlinear and Linear Structural Equation Models. [Submitted for Publication] <https://doi.org/10.31219/osf.io/pe5bj>
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024a). A General Model-Implied Simulation-Based Power Estimation Method for Correctly and Misspecfied Models: Applications to Nonlinear and Linear Structural Equation Models. [Submitted for Publication] <https://doi.org/10.31219/osf.io/pe5bj>
 
-Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (in press). Estimating Power in Complex Nonlinear Structural Equation Modeling Including Moderation Effects: The `powerNLSEM R`-Package. _Behavior Research Methods._ 
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024b). Estimating Power in Complex Nonlinear Structural Equation Modeling Including Moderation Effects: The `powerNLSEM R`-Package. _Behavior Research Methods._ <https://doi.org/10.3758/s13428-024-02476-3>
 
 Jorgensen, T. D., Pornprasertmanit, S., Schoemann, A. M., & Rosseel, Y. (2022). _`semTools`: Useful tools for structural equation modeling_. R package version 0.5-6. Retrieved from [https://CRAN.R-project.org/package=semTools](https://CRAN.R-project.org/package=semTools)
 
