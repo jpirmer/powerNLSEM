@@ -2,7 +2,7 @@
 % Please edit documentation in R/LMS.R
 \name{LMS}
 \alias{LMS}
-\title{Latent moderated strctured equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM}
+\title{Latent moderated strctural equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM}
 \usage{
 LMS(
   lavModel_Analysis,
@@ -30,7 +30,7 @@ LMS(
 Returns a \code{data.frame} that includes parameter estimates estimated using LMS.
 }
 \description{
-Latent moderated strctured equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
+Latent moderated strctural equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
 }
 \references{
 Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. \emph{Psychometrika, 65}(4), 457–474. \doi{10.1007/BF02296338}

@@ -1,4 +1,4 @@
-#' Latent moderated strctured equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
+#' Latent moderated strctural equations by Klein and Moosbrugger (2000), the ML approach to nonlinear SEM
 #' @param lavModel_Analysis the lavModel_Analysis object
 #' @param data set to fit
 #' @param data_transformations Object containing info on possible data transformations.

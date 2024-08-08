@@ -116,5 +116,5 @@ Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score appr
 Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024).  \emph{Behavior Research Methods, 0}(00), Advance Online Publication.
 }
 \seealso{
-For further details for specific uses see corresponding functions: \code{\link[=power_search]{power_search()}} for all inputs possible, \code{\link[=UPI]{UPI()}} for specifics for the unconstrained product indicator approach, \code{\link[=LMS]{LMS()}} for the latent moderated structured equations approach, \code{\link[=FSR]{FSR()}} for factor score approaches, \code{\link[=SR]{SR()}} for scale regression approaches.
+For further details for specific uses see corresponding functions: \code{\link[=power_search]{power_search()}} for all inputs possible, \code{\link[=UPI]{UPI()}} for specifics for the unconstrained product indicator approach, \code{\link[=LMS]{LMS()}} for the latent moderated structural equations approach, \code{\link[=FSR]{FSR()}} for factor score approaches, \code{\link[=SR]{SR()}} for scale regression approaches.
 }

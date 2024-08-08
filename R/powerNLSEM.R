@@ -16,7 +16,7 @@
 #' @param verbose Logical whether progress should be printed in console. Default to \code{TRUE}.
 #' @param seed Seed for replicability. Default to \code{NULL}, then a seed is drawn at random, which will also be saved in the output.
 #' @param ... Additional arguments passed on to the search functions.
-#' @seealso For further details for specific uses see corresponding functions: [power_search()] for all inputs possible, [UPI()] for specifics for the unconstrained product indicator approach, [LMS()] for the latent moderated structured equations approach, [FSR()] for factor score approaches, [SR()] for scale regression approaches.
+#' @seealso For further details for specific uses see corresponding functions: [power_search()] for all inputs possible, [UPI()] for specifics for the unconstrained product indicator approach, [LMS()] for the latent moderated structural equations approach, [FSR()] for factor score approaches, [SR()] for scale regression approaches.
 #' @returns Returns an list object of class \code{powerNLSEM}.
 #' @references Klein, A. G., & Moosbrugger, H. (2000). Maximum likelihood estimation of latent interaction effects with the LMS method. _Psychometrika, 65_(4), 457–474. \doi{10.1007/BF02296338}
 #' @references Kelava, A., & Brandt, H. (2009). Estimation of nonlinear latent structural equation models using the extended unconstrained approach. _Review of Psychology, 16_(2), 123–132.
