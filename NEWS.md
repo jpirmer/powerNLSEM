@@ -1,3 +1,8 @@
+### powerNLSEM 0.1.2
+
+* Fix minor bugs
+* Add DOI for articles this package is based on (Irmer et al., 2024a, 2024b) in DESCRIPTION, function documentation and Vignettes
+
 ### powerNLSEM 0.1.1
 
 * Use temporal directory for `LMS` fitted using `Mplus` per default (as suggested in the submission process to CRAN).

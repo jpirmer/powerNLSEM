@@ -12,7 +12,8 @@ bibentry(
   journal = "Behavior Research Methods",
   volume = "0",
   number = "00",
-  pages = "Advance Online Publication"
+  pages = "Advance Online Publication",
+  doi = "10.3758/s13428-024-02476-3"
 )
 
 bibentry(
@@ -24,10 +25,10 @@ bibentry(
     person("Karin", "Schermelleh-Engel")
   ),
   year = "2024",
-  journal = "Submitted for Publication",
+  journal = "Behavior Research Methods",
   volume = "0",
   number = "00",
-  pages = "Submitted for Publication",
+  pages = "Advance Online Publication",
   doi = "10.31219/osf.io/pe5bj"
 )
 

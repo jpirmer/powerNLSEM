@@ -113,7 +113,9 @@ Marsh, H. W., Wen, Z. & Hau, K. T. (2004). Structural equation models of latent 
 
 Ng, J. C. K., & Chan, W. (2020). Latent moderation analysis: A factor score approach. \emph{Structural Equation Modeling: A Multidisciplinary Journal, 27}(4), 629–648. \doi{10.1080/10705511.2019.1664304}.
 
-Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024).  \emph{Behavior Research Methods, 0}(00), Advance Online Publication.
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024a). A General Model-Implied Simulation-Based Power Estimation Method for Correctly and Misspecfied Models: Applications to Nonlinear and Linear Structural Equation Models. \emph{Behavior Research Methods.}  \doi{10.31219/osf.io/pe5bj}
+
+Irmer, J. P., Klein, A. G., & Schermelleh-Engel, K. (2024b). Estimating Power in Complex Nonlinear Structural Equation Modeling Including Moderation Effects: The \verb{powerNLSEM R}-Package. \emph{Behavior Research Methods.} \doi{10.3758/s13428-024-02476-3}
 }
 \seealso{
 For further details for specific uses see corresponding functions: \code{\link[=power_search]{power_search()}} for all inputs possible, \code{\link[=UPI]{UPI()}} for specifics for the unconstrained product indicator approach, \code{\link[=LMS]{LMS()}} for the latent moderated structural equations approach, \code{\link[=FSR]{FSR()}} for factor score approaches, \code{\link[=SR]{SR()}} for scale regression approaches.
