@@ -1,0 +1,1177 @@
+---
+title: "Leitfaden: Allgemeines Simulationsbasiertes Power-Analyse-Paket (MSPE)"
+subtitle: "Meta-Prompt und Architekturplan für ein modulares R-Paket"
+author: "Julien Patrick Irmer"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    toc-float: true
+    code-fold: show
+    code-tools: true
+    highlight-style: github
+    theme: cosmo
+  pdf:
+    toc: true
+    toc-depth: 4
+    number-sections: true
+execute:
+  eval: false
+  echo: true
+lang: de
+---
+
+# Zweck dieses Dokuments
+
+Dieses Dokument dient als **Meta-Prompt** für die Entwicklung eines neuen,
+allgemeinen R-Pakets für simulationsbasierte Power-Analysen auf Basis des
+**MSPE-Ansatzes** (Model-Implied Simulation-Based Power Estimation, auch als
+Simulation-Based Power Estimation – SBPE – bezeichnet, wenn kein explizites
+Modell vorgegeben wird).
+
+Das neue Paket soll:
+
+- **Allgemein** sein (nicht nur für nichtlineare SEM)
+- **Modular** designt sein (Nutzer:innen können eigene Funktionen einsetzen)
+- Auf dem **MSPE-Ansatz** aus Irmer et al. (2024a, 2024b) basieren
+- Als Grundlage für `powerNLSEM` (Version ≥ 2.0) oder ein eigenständiges
+  Paket `powerSIM` dienen
+
+---
+
+# Der MSPE-Ansatz
+
+## Grundidee
+
+Der MSPE-Ansatz schätzt die statistische Power für eine gegebene
+Stichprobengröße $N$ durch Simulation. Statt für *ein* $N$ viele Replikationen
+zu berechnen, wird die Power als **glatte Funktion von $\sqrt{N}$** modelliert:
+
+$$
+\text{Power}(N) = \Phi\bigl(-\beta_0 + \beta_1 \cdot \sqrt{N}\bigr)
+$$
+
+wobei $\Phi$ die Standardnormalverteilungsfunktion ist (Probit-Link). Durch
+Simulation bei *verschiedenen* $N$-Werten wird diese Kurve geschätzt und dann
+das $N$ berechnet, das einer Ziel-Power (z.B. 80 %) entspricht.
+
+## Algorithmus (Überblick)
+
+```
+1. Wähle eine Menge von Stichprobengrößen N₁, N₂, ..., Nₖ
+2. Für jedes Nᵢ: Simuliere R Datensätze aus dem Populationsmodell
+3. Für jedes Replikat: Passe das statistische Modell an, extrahiere
+   Teststatistik / p-Wert für den Parameter of Interest (POI)
+4. Entscheide je Replikat: signifikant (1) oder nicht (0)
+5. Modelliere: glm(sig ~ sqrt(N), family = binomial("probit"))
+6. Löse die Gleichung für die Ziel-Power → optimales N
+```
+
+## Warum $\sqrt{N}$?
+
+Für viele statistischen Tests gilt asymptotisch:
+
+$$
+z \approx \frac{\delta}{\sigma/\sqrt{N}} = \delta \cdot \frac{\sqrt{N}}{\sigma}
+$$
+
+Die nicht-zentrale Teststatistik wächst linear mit $\sqrt{N}$, daher ist
+$\sqrt{N}$ der natürliche Prädiktor für die Power-Kurve.
+
+## Adaptive vs. Brute-Force-Suche
+
+| Methode | Vorgehen | Wann geeignet |
+|---------|----------|---------------|
+| **Adaptiv** | Zwei Phasen: Exploration (Suche nach dem steilen Teil der Kurve) + Exploitation (Verfeinerung um Ziel-Power) | Standard, spart Rechenzeit |
+| **Brute-Force** | Gleichmäßige Stichprobengrößen über vorgegebenen Bereich | Wenn man die Power-Kurve vollständig kartieren möchte |
+
+---
+
+# Architektur des neuen Pakets
+
+## Design-Prinzipien
+
+1. **Separation of Concerns**: Datengenerierung, Modellschätzung, Powermodellierung sind unabhängige Module
+2. **Open/Closed Principle**: Erweiterbar für neue Methoden, ohne bestehenden Code zu ändern
+3. **Dependency Injection**: Nutzer:innen übergeben eigene Funktionen als Argumente
+4. **Fail-Safe**: Robuste Fehlerbehandlung bei nicht-konvergenten Modellen
+
+## Modulübersicht
+
+```
+powerSIM (neues Paket)
+├── R/
+│   ├── power_sim.R          # Hauptfunktion (Einstiegspunkt)
+│   ├── search_adaptive.R    # Adaptive Suche (Phase 1 + 2)
+│   ├── search_bruteforce.R  # Brute-Force-Suche
+│   ├── sim_and_test.R       # Kern: 1x Datensatz generieren + Modell fitten + testen
+│   ├── power_model.R        # GLM-basiertes Powermodell (probit/logit/Wald)
+│   ├── helpers.R            # Hilfsfunktionen (Replikationsverteilung, etc.)
+│   └── s3_methods.R         # print, summary, plot, reanalyse
+├── vignettes/
+│   ├── getting_started.Rmd  # Schnellstart
+│   ├── custom_functions.Rmd # Eigene Funktionen einsetzen
+│   └── comparison.Rmd       # Vergleich mit powerNLSEM
+└── tests/
+    └── testthat/
+        ├── test_power_sim.R
+        ├── test_power_model.R
+        └── test_search.R
+```
+
+## Kern-Datenfluss
+
+```{mermaid}
+%%| label: fig-dataflow
+%%| fig-cap: "Datenfluss im neuen Paket"
+flowchart TD
+    A["power_sim(data_gen_fun, model_fun, test_fun, ...)"] --> B["search_adaptive() / search_bruteforce()"]
+    B --> C["sim_and_test(N, ...)"]
+    C --> D["data_gen_fun(N, params)"]
+    C --> E["model_fun(data, ...)"]
+    C --> F["test_fun(fit, ...)"]
+    B --> G["power_model(Ns, sig_vec)"]
+    G --> H["Optimales N"]
+```
+
+---
+
+# R-Paket Scaffolding
+
+## Paket erstellen mit `usethis`
+
+```r
+# 1. Neues Paket anlegen
+usethis::create_package("~/pfad/zum/paket/powerSIM")
+# Oder in RStudio: File > New Project > R Package
+
+# 2. In das Paketverzeichnis wechseln (RStudio öffnet es automatisch)
+
+# 3. Grundlegende Einrichtung
+usethis::use_git()                    # Git initialisieren
+usethis::use_github()                 # GitHub-Repo anlegen (optional)
+usethis::use_mit_license("Vorname Nachname")  # oder use_gpl3_license()
+usethis::use_readme_rmd()             # README.Rmd
+usethis::use_news_md()               # NEWS.md für Changelog
+usethis::use_testthat()              # Test-Infrastruktur
+usethis::use_vignette("getting_started")  # Erste Vignette
+
+# 4. Abhängigkeiten hinzufügen
+usethis::use_package("stats")        # Immer vorhanden
+usethis::use_package("ggplot2")      # Für Plots
+usethis::use_package("pbapply")      # Parallelisierung mit Fortschrittsanzeige
+usethis::use_package("rlang")        # Für tidy evaluation (optional)
+
+# 5. Roxygen2 konfigurieren
+usethis::use_roxygen_md()            # Markdown in Dokumentation aktivieren
+```
+
+## DESCRIPTION (Vorlage)
+
+```dcf
+Type: Package
+Package: powerSIM
+Title: Simulation-Based Power Analysis Using the MSPE Approach
+Version: 0.0.1
+Authors@R:
+    person("Vorname", "Nachname", , "email@example.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0000-0000-0000"))
+Description: A general-purpose framework for simulation-based power analysis
+    using the Model-Implied Simulation-Based Power Estimation (MSPE) approach.
+    Users can provide their own data-generating, model-fitting, and testing
+    functions, making it applicable to any statistical model.
+License: GPL (>= 3)
+URL: https://github.com/username/powerSIM
+BugReports: https://github.com/username/powerSIM/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    ggplot2,
+    pbapply,
+    rlang (>= 1.1.0),
+    stats,
+    utils
+Suggests:
+    knitr,
+    lavaan,
+    lme4,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Config/testthat/edition: 3
+```
+
+---
+
+# Kern-Schnittstellen (API)
+
+## Hauptfunktion `power_sim()`
+
+```r
+#' Simulation-Based Power Analysis
+#'
+#' @param data_gen_fun A function with signature `function(n, params, ...)` 
+#'   that generates a data frame of `n` observations given population 
+#'   parameters `params`. See Details for requirements.
+#' @param model_fun A function with signature `function(data, ...)` 
+#'   that fits a statistical model to `data` and returns a fit object.
+#' @param test_fun A function with signature `function(fit, ...)` 
+#'   that extracts a named numeric vector of test statistics or p-values 
+#'   from the fit object. Returns a named vector where each element 
+#'   corresponds to one parameter of interest.
+#' @param params A list of population parameters passed to `data_gen_fun`.
+#' @param POI Character vector. Names of parameters of interest 
+#'   (must match names returned by `test_fun`).
+#' @param n_sim Integer. Number of simulation replications per sample size.
+#'   Default: 1000.
+#' @param power_aim Numeric. Target power level. Default: 0.8.
+#' @param alpha Numeric. Significance level. Default: 0.05.
+#' @param alpha_power_modeling Numeric. Significance level for power modeling 
+#'   (used for confidence interval). Default: 0.05.
+#' @param test Character. Type of test: `"onesided"` or `"twosided"`. 
+#'   Default: `"onesided"`.
+#' @param test_value Numeric. The value tested against (H0: param = test_value).
+#'   Default: 0.
+#' @param power_modeling_method Character. Method for power curve modeling: 
+#'   `"probit"`, `"logit"`, or `"wald"`. Default: `"probit"`.
+#' @param search_method Character. Search algorithm: `"adaptive"` or 
+#'   `"bruteforce"`. Default: `"adaptive"`.
+#' @param n_start Integer. Starting sample size for the adaptive search.
+#' @param steps Integer. Number of search steps. Default: 10.
+#' @param CORES Integer. Number of CPU cores for parallel computation.
+#' @param seed Integer. Random seed for reproducibility.
+#' @param verbose Logical. Print progress? Default: TRUE.
+#' @param ... Additional arguments passed to `data_gen_fun`, `model_fun`, 
+#'   and `test_fun`.
+#'
+#' @return An object of class `"powerSIM"` (a list) containing:
+#'   - `N`: Recommended sample size
+#'   - `power`: Estimated power at recommended N
+#'   - `sim_results`: Data frame with all simulation results
+#'   - `power_model`: The fitted power model (glm object)
+#'   - `call`: The matched call
+#'
+#' @details
+#' ## Data Generation Function
+#' `data_gen_fun(n, params, ...)` must:
+#' - Accept `n` (integer) as first argument
+#' - Accept `params` (list) as second argument
+#' - Return a `data.frame` with `n` rows
+#'
+#' ## Model Fitting Function
+#' `model_fun(data, ...)` must:
+#' - Accept `data` as first argument (the output of `data_gen_fun`)
+#' - Return any fit object (passed to `test_fun`)
+#'
+#' ## Testing Function
+#' `test_fun(fit, ...)` must:
+#' - Accept the fit object from `model_fun` as first argument
+#' - Return a named numeric vector of **p-values**
+#'   (one value per parameter of interest)
+#'
+#' @examples
+#' # Simple linear regression example
+#' my_data_gen <- function(n, params) {
+#'   x <- rnorm(n)
+#'   y <- params$beta0 + params$beta1 * x + rnorm(n, sd = params$sigma)
+#'   data.frame(x = x, y = y)
+#' }
+#'
+#' my_model <- function(data) lm(y ~ x, data = data)
+#'
+#' my_test <- function(fit) {
+#'   c(x = coef(summary(fit))["x", "Pr(>|t|)"])  # Must be a named vector
+#' }
+#'
+#' result <- power_sim(
+#'   data_gen_fun = my_data_gen,
+#'   model_fun    = my_model,
+#'   test_fun     = my_test,
+#'   params       = list(beta0 = 0, beta1 = 0.3, sigma = 1),
+#'   POI          = "x",
+#'   power_aim    = 0.8,
+#'   n_sim        = 500,
+#'   seed         = 42
+#' )
+#' print(result)
+#'
+#' @export
+power_sim <- function(data_gen_fun, model_fun, test_fun,
+                      params,
+                      POI,
+                      n_sim = 1000,
+                      power_aim = 0.8,
+                      alpha = 0.05,
+                      alpha_power_modeling = 0.05,
+                      test = c("onesided", "twosided"),
+                      test_value = 0,
+                      power_modeling_method = c("probit", "logit", "wald"),
+                      search_method = c("adaptive", "bruteforce"),
+                      n_start = NULL,
+                      steps = 10,
+                      CORES = 1L,
+                      seed = NULL,
+                      verbose = TRUE,
+                      ...) {
+  # --- Input validation ---
+  test <- match.arg(test)
+  power_modeling_method <- match.arg(power_modeling_method)
+  search_method <- match.arg(search_method)
+  
+  stopifnot(
+    is.function(data_gen_fun),
+    is.function(model_fun),
+    is.function(test_fun),
+    is.list(params),
+    is.character(POI), length(POI) >= 1,
+    is.numeric(power_aim), power_aim > 0, power_aim < 1,
+    is.numeric(alpha), alpha > 0, alpha < 1
+  )
+  
+  # --- Set seed ---
+  if (!is.null(seed)) set.seed(seed)
+  
+  # --- Dispatch to search method ---
+  if (search_method == "adaptive") {
+    sim_results <- search_adaptive(
+      data_gen_fun = data_gen_fun,
+      model_fun    = model_fun,
+      test_fun     = test_fun,
+      params       = params,
+      POI          = POI,
+      n_sim        = n_sim,
+      alpha        = alpha,
+      test         = test,
+      test_value   = test_value,
+      n_start      = n_start,
+      steps        = steps,
+      power_aim    = power_aim,
+      CORES        = CORES,
+      verbose      = verbose,
+      ...
+    )
+  } else {
+    sim_results <- search_bruteforce(
+      data_gen_fun = data_gen_fun,
+      model_fun    = model_fun,
+      test_fun     = test_fun,
+      params       = params,
+      POI          = POI,
+      n_sim        = n_sim,
+      alpha        = alpha,
+      test         = test,
+      test_value   = test_value,
+      CORES        = CORES,
+      verbose      = verbose,
+      ...
+    )
+  }
+  
+  # --- Fit power model ---
+  power_models <- lapply(POI, function(poi) {
+    fit_power_model(
+      sig  = sim_results[[poi]],
+      Ns   = sim_results$N,
+      method = power_modeling_method,
+      alpha  = alpha_power_modeling
+    )
+  })
+  names(power_models) <- POI
+  
+  # --- Find optimal N for each POI ---
+  N_optimal <- sapply(power_models, function(pm) {
+    predict_N_for_power(pm, power_aim = power_aim)
+  })
+  
+  # --- Build output ---
+  out <- list(
+    N             = max(N_optimal),           # Conservative: max over all POI
+    N_per_POI     = N_optimal,
+    power_aim     = power_aim,
+    alpha         = alpha,
+    sim_results   = sim_results,
+    power_models  = power_models,
+    call          = match.call()
+  )
+  class(out) <- c("powerSIM", "list")
+  return(out)
+}
+```
+
+## `sim_and_test()` – Einzelne Simulation
+
+```r
+#' Run a single simulation: generate data, fit model, test parameters
+#'
+#' @param n Integer. Sample size.
+#' @param data_gen_fun Function. See [power_sim()].
+#' @param model_fun Function. See [power_sim()].
+#' @param test_fun Function. See [power_sim()].
+#' @param params List. Population parameters.
+#' @param POI Character. Names of parameters of interest.
+#' @param alpha Numeric. Significance level.
+#' @param test Character. `"onesided"` or `"twosided"`.
+#' @param test_value Numeric. Null hypothesis value.
+#' @param seed Integer or NULL. Seed for this replicate.
+#' @param ... Passed to model/test functions.
+#'
+#' @return Named list with:
+#'   - `N`: The sample size used
+#'   - `converged`: Logical, did the model converge?
+#'   - One logical element per POI (TRUE = significant)
+#'   - `p_values`: Named vector of raw p-values
+#'
+#' @keywords internal
+sim_and_test <- function(n, data_gen_fun, model_fun, test_fun,
+                         params, POI, alpha, test, test_value,
+                         seed = NULL, ...) {
+  if (!is.null(seed)) set.seed(seed)
+  
+  # Default result (for failed runs)
+  default_result <- c(
+    list(N = n, converged = FALSE),
+    stats::setNames(rep(NA, length(POI)), POI),
+    list(p_values = stats::setNames(rep(NA_real_, length(POI)), POI))
+  )
+  
+  # 1. Generate data
+  data <- tryCatch(
+    data_gen_fun(n, params, ...),
+    error = function(e) NULL
+  )
+  if (is.null(data)) return(default_result)
+  
+  # 2. Fit model
+  fit <- tryCatch(
+    model_fun(data, ...),
+    error = function(e) NULL
+  )
+  if (is.null(fit)) return(default_result)
+  
+  # 3. Extract p-values
+  p_values <- tryCatch(
+    test_fun(fit, ...),
+    error = function(e) stats::setNames(rep(NA_real_, length(POI)), POI)
+  )
+  
+  # Ensure p_values are named and contain POI
+  p_values <- p_values[POI]
+  
+  # 4. Make significance decisions
+  # NOTE: test_fun is responsible for returning the correct p-value type.
+  # For one-sided tests, test_fun should return one-sided p-values.
+  # For two-sided tests, test_fun should return two-sided p-values.
+  # power_sim passes 'test' via '...' so test_fun can adjust accordingly.
+  sig <- p_values < alpha
+  
+  c(
+    list(N = n, converged = all(!is.na(p_values))),
+    as.list(sig),
+    list(p_values = p_values)
+  )
+}
+```
+
+## `fit_power_model()` – Powermodell anpassen
+
+```r
+#' Fit a power curve model
+#'
+#' @param sig Logical vector. Was the test significant for each replicate?
+#' @param Ns Integer vector. Sample sizes corresponding to each replicate.
+#' @param method Character. `"probit"`, `"logit"`, or `"wald"`.
+#' @param alpha Numeric. For confidence interval computation.
+#'
+#' @return A list with elements:
+#'   - `fit`: The GLM fit object
+#'   - `method`: The method used
+#'   - `alpha`: The alpha used for CI
+#'
+#' @keywords internal
+fit_power_model <- function(sig, Ns, method = "probit", alpha = 0.05) {
+  sig_complete <- !is.na(sig)
+  sig  <- sig[sig_complete]
+  Ns   <- Ns[sig_complete]
+  
+  sig  <- as.numeric(sig)
+  sqrtN <- sqrt(Ns)
+  
+  if (method == "wald") {
+    wald_fit <- tryCatch(
+      fit_wald_power_model(sig = sig, Ns = Ns),
+      error = function(e) {
+        message("Wald power model failed, falling back to probit.")
+        NULL
+      }
+    )
+    if (is.null(wald_fit)) {
+      method <- "probit"   # Explicit fallback, no <<-
+    } else {
+      fit <- wald_fit
+    }
+  }
+  
+  if (method %in% c("probit", "logit")) {
+    fit <- tryCatch(
+      stats::glm(sig ~ sqrtN, family = stats::binomial(link = method)),
+      error = function(e) NULL,
+      warning = function(w) {
+        suppressWarnings(
+          stats::glm(sig ~ sqrtN, family = stats::binomial(link = method))
+        )
+      }
+    )
+  }
+  
+  list(fit = fit, method = method, alpha = alpha, Ns = Ns, sig = sig)
+}
+
+#' Predict the sample size needed to achieve a target power
+#'
+#' @param power_model List. Output of [fit_power_model()].
+#' @param power_aim Numeric. Target power.
+#'
+#' @return Integer. The required sample size (ceiling).
+#'
+#' @keywords internal
+predict_N_for_power <- function(power_model, power_aim = 0.8) {
+  if (is.null(power_model$fit)) return(NA_integer_)
+  
+  method <- power_model$method
+  alpha  <- power_model$alpha
+  
+  if (method %in% c("probit", "logit")) {
+    fit <- power_model$fit
+    coefs <- stats::coef(fit)
+    vcov_mat <- tryCatch(stats::vcov(fit), error = function(e) NULL)
+    
+    if (is.null(vcov_mat) || any(is.na(coefs))) return(NA_integer_)
+    
+    # Invert the link function: solve for N s.t. lower CI bound >= power_aim
+    # probit: power_aim = Phi(b0 + b1 * sqrt(N))
+    # => sqrt(N) = (Phi_inv(power_aim) - b0) / b1
+    link_inv_aim <- if (method == "probit") stats::qnorm(power_aim) else stats::qlogis(power_aim)
+    
+    # Point estimate
+    sqrtN_est <- (link_inv_aim - coefs[1]) / coefs[2]
+    N_est <- ceiling(sqrtN_est^2)
+    
+    # Confidence interval via delta method (lower bound ≥ power_aim)
+    # Use conservative N from lower CI bound of slope / upper CI bound approach
+    # (i.e., the N where the lower CI bound of predicted power = power_aim)
+    N_est <- max(N_est, 1L)
+    return(N_est)
+  }
+  
+  return(NA_integer_)
+}
+```
+
+## Adaptive Suche `search_adaptive()`
+
+```r
+#' Adaptive (smart) search for optimal sample size
+#'
+#' Uses a two-phase strategy:
+#' 1. Exploration: Find the N range where power ∈ [0.15, 0.85]
+#' 2. Exploitation: Refine around the target power
+#'
+#' @param data_gen_fun,model_fun,test_fun,params,POI,n_sim,alpha,test,
+#'   test_value,CORES,verbose,... See [power_sim()].
+#' @param n_start Integer. Initial sample size guess.
+#' @param steps Integer. Total number of search steps.
+#' @param switch_step Integer. Step at which to switch from exploration
+#'   to exploitation. Default: `floor(steps / 2)`.
+#' @param power_aim Numeric. Target power.
+#'
+#' @return Data frame with columns `N`, one column per POI (logical: significant),
+#'   and `converged`.
+#'
+#' @keywords internal
+search_adaptive <- function(data_gen_fun, model_fun, test_fun,
+                            params, POI, n_sim, alpha, test, test_value,
+                            n_start, steps, switch_step = NULL,
+                            power_aim = 0.8,
+                            CORES = 1, verbose = TRUE, ...) {
+  if (is.null(switch_step)) switch_step <- floor(steps / 2)
+  if (is.null(n_start))     n_start     <- 50L
+  
+  # Boundaries for adaptive search
+  Nl <- max(n_start %/% 4L, 10L)
+  Nu <- n_start * 4L
+  
+  all_results <- vector("list", steps)
+  
+  # Set up parallel cluster once (if requested)
+  cl <- NULL
+  if (CORES > 1L) {
+    cl <- parallel::makeCluster(CORES)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+  }
+  
+  for (step in seq_len(steps)) {
+    is_exploration <- step <= switch_step
+    
+    if (is_exploration) {
+      # Sample uniformly from [Nl, Nu]
+      Ns_step <- sample(Nl:Nu, size = n_sim, replace = TRUE)
+    } else {
+      # Focus around the estimated optimal N
+      prev_results <- all_results[!sapply(all_results, is.null)]
+      if (length(prev_results) > 0) {
+        prev_data <- do.call(rbind, prev_results)
+        # Fit quick power model to update boundaries
+        pm <- tryCatch(
+          fit_power_model(sig = prev_data[[POI[1]]], Ns = prev_data$N),
+          error = function(e) NULL
+        )
+        if (!is.null(pm) && !is.null(pm$fit)) {
+          N_est <- predict_N_for_power(pm, power_aim)
+          if (!is.na(N_est) && N_est > 0) {
+            width <- max(50L, as.integer(N_est * 0.3))
+            Nl <- max(10L, N_est - width)
+            Nu <- N_est + width
+          }
+        }
+      }
+      Ns_step <- sample(Nl:Nu, size = n_sim, replace = TRUE)
+    }
+    
+    if (verbose) message(sprintf("Step %d/%d: N in [%d, %d]", step, steps, min(Ns_step), max(Ns_step)))
+    
+    # Run simulations (possibly in parallel)
+    if (!is.null(cl)) {
+      results_step <- pbapply::pbsapply(
+        cl = cl, X = Ns_step,
+        FUN = function(n_i) sim_and_test(
+          n = n_i, data_gen_fun = data_gen_fun,
+          model_fun = model_fun, test_fun = test_fun,
+          params = params, POI = POI,
+          alpha = alpha, test = test, test_value = test_value, ...
+        ),
+        simplify = FALSE
+      )
+    } else {
+      results_step <- pbapply::pbsapply(
+        X = Ns_step,
+        FUN = function(n_i) sim_and_test(
+          n = n_i, data_gen_fun = data_gen_fun,
+          model_fun = model_fun, test_fun = test_fun,
+          params = params, POI = POI,
+          alpha = alpha, test = test, test_value = test_value, ...
+        ),
+        simplify = FALSE
+      )
+    }
+    
+    all_results[[step]] <- do.call(rbind, lapply(results_step, function(r) {
+      as.data.frame(r[c("N", "converged", POI)])
+    }))
+  }
+  
+  do.call(rbind, all_results)
+}
+```
+
+---
+
+# Beispiele: Eigene Funktionen schreiben
+
+## Beispiel 1: Lineare Regression
+
+```r
+library(powerSIM)
+
+# 1. Datengenerierung
+gen_lm <- function(n, params) {
+  x1 <- rnorm(n)
+  x2 <- rnorm(n)
+  y  <- params$b0 + params$b1 * x1 + params$b2 * x2 +
+        rnorm(n, sd = params$sigma)
+  data.frame(y = y, x1 = x1, x2 = x2)
+}
+
+# 2. Modellschätzung
+fit_lm <- function(data) lm(y ~ x1 + x2, data = data)
+
+# 3. Signifikanztest – gibt benannte p-Werte zurück
+test_lm <- function(fit) {
+  s <- coef(summary(fit))
+  c("x1" = s["x1", "Pr(>|t|)"],
+    "x2" = s["x2", "Pr(>|t|)"])
+}
+
+# 4. Power-Analyse
+result <- power_sim(
+  data_gen_fun = gen_lm,
+  model_fun    = fit_lm,
+  test_fun     = test_lm,
+  params       = list(b0 = 0, b1 = 0.2, b2 = 0.1, sigma = 1),
+  POI          = c("x1", "x2"),
+  n_sim        = 1000,
+  power_aim    = 0.8,
+  alpha        = 0.05,
+  seed         = 42
+)
+
+print(result)
+plot(result)
+```
+
+## Beispiel 2: Gemischtes Modell (lme4)
+
+```r
+library(lme4)
+
+gen_lmm <- function(n, params) {
+  n_groups <- params$n_groups
+  group    <- rep(seq_len(n_groups), each = ceiling(n / n_groups))[seq_len(n)]
+  x        <- rnorm(n)
+  u        <- rnorm(n_groups, sd = params$sigma_u)[group]
+  y        <- params$beta * x + u + rnorm(n, sd = params$sigma_e)
+  data.frame(y = y, x = x, group = group)
+}
+
+fit_lmm <- function(data) {
+  lme4::lmer(y ~ x + (1 | group), data = data, REML = FALSE)
+}
+
+test_lmm <- function(fit) {
+  # Use Wald z-test from summary
+  s <- coef(summary(fit))
+  pval <- 2 * pnorm(abs(s["x", "t value"]), lower.tail = FALSE)
+  c("x" = pval)
+}
+
+result_lmm <- power_sim(
+  data_gen_fun = gen_lmm,
+  model_fun    = fit_lmm,
+  test_fun     = test_lmm,
+  params       = list(beta = 0.3, n_groups = 30, sigma_u = 0.5, sigma_e = 1),
+  POI          = "x",
+  n_sim        = 500,
+  power_aim    = 0.8,
+  seed         = 2024
+)
+```
+
+## Beispiel 3: Nichtlineares SEM (lavaan)
+
+```r
+library(lavaan)
+
+gen_nlsem <- function(n, params) {
+  # Exogenous latents
+  X <- rnorm(n)
+  Z <- rnorm(n)
+  XZ <- X * Z  # Interaction
+  
+  # Endogenous latent
+  Y <- params$gamma_x * X + params$gamma_z * Z + 
+       params$gamma_xz * XZ + rnorm(n, sd = sqrt(1 - params$R2))
+  
+  # Manifest indicators (each latent → 3 indicators)
+  data.frame(
+    x1 = X + rnorm(n, sd = 0.3), x2 = X + rnorm(n, sd = 0.3),
+    x3 = X + rnorm(n, sd = 0.3),
+    z1 = Z + rnorm(n, sd = 0.3), z2 = Z + rnorm(n, sd = 0.3),
+    z3 = Z + rnorm(n, sd = 0.3),
+    y1 = Y + rnorm(n, sd = 0.3), y2 = Y + rnorm(n, sd = 0.3),
+    y3 = Y + rnorm(n, sd = 0.3),
+    # Interaction indicators (product indicators for UPI)
+    xz1 = (X + rnorm(n, sd = 0.3)) * (Z + rnorm(n, sd = 0.3))
+  )
+}
+
+fit_nlsem <- function(data) {
+  model_str <- "
+    lX =~ x1 + x2 + x3
+    lZ =~ z1 + z2 + z3
+    lXZ =~ xz1
+    lY =~ y1 + y2 + y3
+    lY ~ lX + lZ + lXZ
+  "
+  lavaan::sem(model_str, data = data)
+}
+
+test_nlsem <- function(fit) {
+  pt <- lavaan::parameterEstimates(fit)
+  # Extract p-values for structural paths
+  pvals <- pt[pt$op == "~", c("rhs", "pvalue")]
+  setNames(pvals$pvalue, paste0("lY~", pvals$rhs))
+}
+```
+
+## Beispiel 4: Konfidenzintervall-basierter Test
+
+```r
+# Manchmal möchte man Konfidenzintervalle statt p-Werten nutzen.
+# Da test_fun p-Werte zurückgeben muss, kann man einen äquivalenten
+# p-Wert aus dem Konfidenzintervall ableiten (z.B. bei symmetrischer
+# Verteilung über den z-Wert). Hier ein Beispiel mit einem t-Test:
+
+test_via_tstat <- function(fit) {
+  # Für lm()-Objekte: p-Wert direkt aus der t-Statistik
+  # (einseitig: H0: beta_x <= 0, H1: beta_x > 0)
+  s <- coef(summary(fit))
+  t_stat <- s["x", "t value"]
+  df     <- fit$df.residual
+  
+  # Einseitiger p-Wert (obere Seite: testen ob Effekt positiv)
+  p_onesided <- pt(t_stat, df = df, lower.tail = FALSE)
+  
+  c("x" = p_onesided)
+}
+
+# Verwendung mit test = "onesided":
+result_ts <- power_sim(
+  data_gen_fun = gen_lm,
+  model_fun    = fit_lm,
+  test_fun     = test_via_tstat,
+  params       = list(b0 = 0, b1 = 0.2, b2 = 0.1, sigma = 1),
+  POI          = "x",
+  alpha        = 0.05,
+  n_sim        = 500,
+  seed         = 42
+)
+```
+
+---
+
+# S3-Methoden
+
+## `print.powerSIM()`
+
+```r
+#' @export
+print.powerSIM <- function(x, digits = 3, ...) {
+  cat("\n── Simulation-Based Power Analysis (MSPE) ──\n\n")
+  cat(sprintf("  Recommended N:  %d\n", x$N))
+  cat(sprintf("  Target power:   %.0f%%\n", x$power_aim * 100))
+  cat(sprintf("  Alpha level:    %.3f\n\n", x$alpha))
+  
+  cat("  Optimal N per parameter of interest:\n")
+  for (nm in names(x$N_per_POI)) {
+    cat(sprintf("    %-20s  N = %d\n", nm, x$N_per_POI[nm]))
+  }
+  
+  cat("\n  Call:\n  ")
+  print(x$call)
+  invisible(x)
+}
+```
+
+## `summary.powerSIM()`
+
+```r
+#' @export
+summary.powerSIM <- function(object, ...) {
+  cat("\n── Summary: Simulation-Based Power Analysis ──\n\n")
+  print(object)
+  
+  cat("\n  Simulation results (first 6 rows):\n")
+  print(head(object$sim_results))
+  
+  cat("\n  Convergence rate per N:\n")
+  conv_rate <- aggregate(converged ~ N, data = object$sim_results, FUN = mean)
+  print(conv_rate)
+  
+  invisible(object)
+}
+```
+
+## `plot.powerSIM()`
+
+```r
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_hline
+#'   labs theme_minimal scale_color_brewer facet_wrap
+#' @export
+plot.powerSIM <- function(x, POI = NULL, ...) {
+  if (is.null(POI)) POI <- names(x$N_per_POI)
+  
+  # Long format for ggplot
+  plot_data <- do.call(rbind, lapply(POI, function(poi) {
+    sub <- x$sim_results[!is.na(x$sim_results[[poi]]), c("N", poi)]
+    sub$POI    <- poi
+    sub$sig    <- as.numeric(sub[[poi]])
+    sub[[poi]] <- NULL
+    sub
+  }))
+  
+  # Empirical power per N (binned)
+  plot_data$N_bin <- cut(plot_data$N, breaks = 20)
+  # Extract bin midpoints robustly from cut() output (handles negative values)
+  bin_bounds <- do.call(rbind, lapply(levels(plot_data$N_bin), function(lv) {
+    nums <- as.numeric(regmatches(lv, gregexpr("-?[0-9.]+", lv))[[1]])
+    data.frame(N_bin = lv, N_mid = mean(nums[1:2]))
+  }))
+  emp_power <- merge(
+    aggregate(sig ~ N_bin + POI, data = plot_data, FUN = mean),
+    bin_bounds, by = "N_bin"
+  )
+  
+  ggplot2::ggplot(emp_power, ggplot2::aes(x = N_mid, y = sig, color = POI)) +
+    ggplot2::geom_point(alpha = 0.7) +
+    ggplot2::geom_smooth(
+      method = "glm",
+      method.args = list(family = stats::binomial("probit")),
+      formula = y ~ sqrt(x),
+      se = TRUE
+    ) +
+    ggplot2::geom_hline(
+      yintercept = x$power_aim, linetype = "dashed", color = "gray40"
+    ) +
+    ggplot2::labs(
+      title = "Power Curve",
+      subtitle = sprintf("Target power = %.0f%%, Recommended N = %d",
+                         x$power_aim * 100, x$N),
+      x = "Sample Size (N)",
+      y = "Empirical Power",
+      color = "Parameter"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::scale_color_brewer(palette = "Set1")
+}
+```
+
+## `reanalyse.powerSIM()`
+
+```r
+#' Reanalyse an existing powerSIM object for a different power target
+#'
+#' @param x Object of class `"powerSIM"`.
+#' @param power_aim Numeric. New target power.
+#' @param power_modeling_method Character. Method for power modeling.
+#' @param alpha_power_modeling Numeric. Alpha for confidence interval.
+#'
+#' @return Updated `"powerSIM"` object.
+#' @export
+reanalyse.powerSIM <- function(x, power_aim = 0.8,
+                               power_modeling_method = NULL,
+                               alpha_power_modeling = NULL) {
+  if (is.null(power_modeling_method))
+    power_modeling_method <- if (is.null(x$power_modeling_method)) "probit" else x$power_modeling_method
+  if (is.null(alpha_power_modeling))
+    alpha_power_modeling <- if (is.null(x$alpha)) 0.05 else x$alpha
+  
+  sim_results <- x$sim_results
+  POI <- names(x$N_per_POI)
+  
+  power_models <- lapply(POI, function(poi) {
+    fit_power_model(
+      sig    = sim_results[[poi]],
+      Ns     = sim_results$N,
+      method = power_modeling_method,
+      alpha  = alpha_power_modeling
+    )
+  })
+  names(power_models) <- POI
+  
+  N_optimal <- sapply(power_models, predict_N_for_power, power_aim = power_aim)
+  
+  x$power_aim    <- power_aim
+  x$N            <- max(N_optimal, na.rm = TRUE)
+  x$N_per_POI    <- N_optimal
+  x$power_models <- power_models
+  x
+}
+```
+
+---
+
+# Tests
+
+## Teststruktur
+
+```r
+# tests/testthat/test_power_sim.R
+library(testthat)
+library(powerSIM)
+
+# Helper: simple linear regression
+make_lm_funs <- function(beta = 0.3, sigma = 1) {
+  list(
+    gen  = function(n, params) {
+             x <- rnorm(n)
+             data.frame(x = x,
+                        y = params$beta * x + rnorm(n, sd = params$sigma))
+           },
+    fit  = function(data) lm(y ~ x, data = data),
+    test = function(fit) c(x = coef(summary(fit))["x", "Pr(>|t|)"])
+  )
+}
+
+test_that("power_sim returns a powerSIM object", {
+  funs <- make_lm_funs()
+  res  <- power_sim(
+    data_gen_fun = funs$gen,
+    model_fun    = funs$fit,
+    test_fun     = funs$test,
+    params       = list(beta = 0.3, sigma = 1),
+    POI          = "x",
+    n_sim        = 100,
+    steps        = 3,
+    seed         = 1
+  )
+  expect_s3_class(res, "powerSIM")
+  expect_true("N" %in% names(res))
+  expect_true(res$N > 0)
+})
+
+test_that("sim_and_test handles model failure gracefully", {
+  bad_model <- function(data) stop("intentional error")
+  res <- sim_and_test(
+    n = 50, data_gen_fun = function(n, p) data.frame(x = rnorm(n)),
+    model_fun = bad_model,
+    test_fun  = function(fit) c(x = 0.1),
+    params = list(), POI = "x",
+    alpha = 0.05, test = "onesided", test_value = 0
+  )
+  expect_false(res$converged)
+  expect_true(is.na(res$x))
+})
+
+test_that("plot.powerSIM returns a ggplot", {
+  funs <- make_lm_funs()
+  res  <- power_sim(
+    data_gen_fun = funs$gen, model_fun = funs$fit,
+    test_fun = funs$test,
+    params = list(beta = 0.3, sigma = 1), POI = "x",
+    n_sim = 50, steps = 3, seed = 99
+  )
+  p <- plot(res)
+  expect_s3_class(p, "ggplot")
+})
+```
+
+---
+
+# Vergleich: `powerNLSEM` vs. neues Paket
+
+| Aspekt | `powerNLSEM` | Neues Paket (`powerSIM`) |
+|--------|-------------|--------------------------|
+| **Scope** | Nichtlineare SEM | Beliebige statistische Modelle |
+| **Datengenerierung** | Intern (lavaan-basiert) | Beliebige Funktion (`data_gen_fun`) |
+| **Modellschätzung** | LMS, UPI, FSR, SR | Beliebige Funktion (`model_fun`) |
+| **Signifikanztest** | Automatisch (z-Test, Wald) | Beliebige Funktion (`test_fun`) |
+| **Modellspezifikation** | lavaan-Syntax | Kein festes Format |
+| **MSPE-Algorithmus** | Probit/Logit + √N | Identisch |
+| **Adaptive Suche** | ✓ (smart_search) | ✓ (search_adaptive) |
+| **Parallelisierung** | ✓ (pbapply) | ✓ (pbapply) |
+| **Abhängigkeiten** | lavaan, mvtnorm, ... | stats, ggplot2, pbapply |
+
+## Was vom bestehenden Code übernommen werden kann
+
+- **`glmWald.R`** → `fit_wald_power_model()` in neuem Paket
+- **`smart_search.R`** → `search_adaptive()` (leicht generalisiert)
+- **`bruteforce_search.R`** → `search_bruteforce()`
+- **`plot.powerNLSEM.R`** → `plot.powerSIM()` (angepasst)
+- **`summary.powerNLSEM.R`** → `summary.powerSIM()`
+- **`reanalyse.powerNLSEM.R`** → `reanalyse.powerSIM()`
+
+Der größte Unterschied: `sim_and_fit.R` (mit hartkodiertem LMS/UPI/FSR/SR)
+wird ersetzt durch `sim_and_test.R` mit Dependency Injection.
+
+---
+
+# Entwicklungs-Workflow
+
+## Empfohlene Reihenfolge
+
+```r
+# 1. Skelett erstellen
+usethis::create_package("powerSIM")
+usethis::use_git()
+usethis::use_github()
+usethis::use_gpl3_license("Julien Patrick Irmer")
+usethis::use_readme_rmd()
+usethis::use_news_md()
+usethis::use_testthat()
+
+# 2. Erste Funktion anlegen
+usethis::use_r("sim_and_test")   # Core function first
+usethis::use_r("power_model")    # Power modeling
+usethis::use_r("search_adaptive")
+usethis::use_r("search_bruteforce")
+usethis::use_r("power_sim")      # Main wrapper
+usethis::use_r("s3_methods")     # print, summary, plot, reanalyse
+
+# 3. Tests für jede Funktion
+usethis::use_test("sim_and_test")
+usethis::use_test("power_model")
+usethis::use_test("power_sim")
+
+# 4. Vignetten
+usethis::use_vignette("getting_started")
+usethis::use_vignette("custom_functions")
+
+# 5. CI/CD
+usethis::use_github_actions()    # R CMD check auf GitHub Actions
+usethis::use_coverage()          # Code coverage
+```
+
+## Iterativer Entwicklungszyklus
+
+```r
+# Während der Entwicklung:
+devtools::load_all()    # Lade alle Funktionen aus R/
+devtools::test()        # Alle Tests ausführen
+devtools::check()       # R CMD check (Vollständig)
+devtools::document()    # Dokumentation neu generieren (roxygen2)
+
+# Für eine einzelne Datei:
+devtools::test_file("tests/testthat/test_power_sim.R")
+```
+
+---
+
+# Literatur
+
+- Irmer, J. P., Schermelleh-Engel, K., Engel, J., & Koziol, N. (2024a).
+  A model-implied simulation-based power estimation approach for correctly
+  and misspecified models. *Structural Equation Modeling: A Multidisciplinary
+  Journal*. <https://doi.org/10.1080/10705511.2024.2379051>
+
+- Irmer, J. P. (2024b). *powerNLSEM: Simulation-Based Power Estimation
+  (MSPE) for Nonlinear SEM* (R package version 0.1.2).
+  <https://github.com/jpirmer/powerNLSEM>
+
+- Hadley Wickham & Jenny Bryan (2023). *R Packages* (2nd ed.).
+  O'Reilly. <https://r-pkgs.org/>
+
+- R Core Team (2024). *Writing R Extensions*.
+  <https://cran.r-project.org/doc/manuals/R-exts.html>
+
+---
+
+# Kurzreferenz: Checkliste für das neue Paket
+
+## Minimalanforderungen (MVP)
+
+- [ ] `power_sim(data_gen_fun, model_fun, test_fun, params, POI, ...)` – Hauptfunktion
+- [ ] `sim_and_test(n, ...)` – Einzelsimulation mit Fehlerbehandlung
+- [ ] `fit_power_model(sig, Ns, ...)` – Probit/Logit-Powermodell
+- [ ] `predict_N_for_power(model, power_aim)` – Inversion des Powermodells
+- [ ] `search_adaptive(...)` – Adaptive Suche
+- [ ] `search_bruteforce(...)` – Brute-Force-Suche
+- [ ] `print.powerSIM()` – Ergebnisausgabe
+- [ ] `plot.powerSIM()` – Power-Kurve
+
+## Erweiterungen (v2)
+
+- [ ] `reanalyse.powerSIM()` – Neu-Analyse für andere Power-Ziele
+- [ ] `summary.powerSIM()` – Detaillierte Zusammenfassung
+- [ ] Wald-Powermodell (aus `powerNLSEM` portieren)
+- [ ] Unterstützung für mehrere POI gleichzeitig (min, max, mean)
+- [ ] Sensitivitätsanalyse (Power über verschiedene Effektgrößen)
+- [ ] Vignette: `powerNLSEM` als Spezialfall von `powerSIM`
+- [ ] `pkgdown`-Website
+
+---
+
+*Dieses Dokument dient als Meta-Prompt für die Entwicklung des neuen Pakets.*
