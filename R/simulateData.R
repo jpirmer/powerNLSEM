@@ -21,8 +21,11 @@ simulateNLSEM <- function(n, lavModel, appendLVs = FALSE, lavModel_attributes = 
      Order <- matrices$Order
      Zeta <- mvtnorm::rmvnorm(n = n, sigma = mat$Psi); colnames(Zeta) <- colnames(mat$Psi)
      Eps <- mvtnorm::rmvnorm(n = n, sigma = mat$Theta); colnames(Eps) <- colnames(mat$Theta)
-     Eps <- cbind(Eps, matrix(0, nrow = nrow(Eps), ncol = length(matrices$vnames$ov.iv)))
-     colnames(Eps)[colnames(Eps) == ""] <- matrices$vnames$ov.iv
+     # manifest variables without their own measurement model (predictor or outcome)
+     # are loaded with 1 onto themselves and carry no additional residual
+     ov.self <- matrices$vnames$ov[!(matrices$vnames$ov %in% colnames(mat$Theta))]
+     Eps <- cbind(Eps, matrix(0, nrow = nrow(Eps), ncol = length(ov.self)))
+     colnames(Eps)[colnames(Eps) == ""] <- ov.self
 
      # start off with "latent" variables
      LV <- Zeta[, Order$lvov[Order$order == 1], drop = FALSE]

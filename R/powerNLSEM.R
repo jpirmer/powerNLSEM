@@ -205,11 +205,14 @@ powerNLSEM <- function(model, POI,
      {
           tempList <- lapply(unique(temp$lhs), FUN = function(x) temp[temp$lhs == x, ]$rhs)
           crossloadings <- FALSE
-          for(i in 1:(length(tempList)-1))
+          if(length(tempList) > 1)
           {
-               mani1 <- tempList[[i]]
-               if(any(sapply(tempList[-i], FUN = function(x) any(mani1 %in% x)))){
-                    crossloadings <- TRUE
+               for(i in 1:(length(tempList)-1))
+               {
+                    mani1 <- tempList[[i]]
+                    if(any(sapply(tempList[-i], FUN = function(x) any(mani1 %in% x)))){
+                         crossloadings <- TRUE
+                    }
                }
           }
           if(crossloadings)

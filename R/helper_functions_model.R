@@ -243,6 +243,8 @@ get_matrices <- function(lavModel, lavModel_attributes){
      }
      # keep rows only if they belong to dependent variables in the model
      Beta_dv <- Beta[!sapply(1:nrow(Beta), function(i) all(Beta[i,]==0)),, drop = FALSE]
+     if(nrow(Beta_dv) == 0L) stop(paste0("No structural path (using the '~' operator) with a non-zero starting/population value was found.\n",
+                                          "Population values need to be specified for structural paths, e.g., 'Y ~ 0.3*X', not just 'Y ~ X'.\nReconsider your model!"))
 
      ## Psi ----
      Psi <- matrix(0, ncol = max(lavModel[lavModel$mat == "psi", c("col", "row")]),
@@ -262,20 +264,23 @@ get_matrices <- function(lavModel, lavModel_attributes){
      Psi <- Psi[!grepl(":", Psi_names),  !grepl(":", Psi_names)]
 
      # full Lambda for simulation ----
-     if(length(ov.iv) > 0)
+     # manifest variables without their own measurement model (whether used as
+     # predictor or as outcome) need a self-loading of 1 to appear in the data
+     ov.self <- if(!is.null(Lambda)) ov[!(ov %in% rownames(Lambda))] else ov
+     if(length(ov.self) > 0)
      {
           if(!is.null(Lambda))
           {
-               Lambda_full <- rbind(Lambda, matrix(0, nrow = length(ov.iv), ncol = ncol(Lambda)))
+               Lambda_full <- rbind(Lambda, matrix(0, nrow = length(ov.self), ncol = ncol(Lambda)))
                Lambda_full <- cbind(Lambda_full, matrix(0, nrow = nrow(Lambda_full),
-                                                        ncol = sum(apply(Theta, 1, function(x) all(x==0))) + length(ov.iv)))
-               colnames(Lambda_full)[colnames(Lambda_full) == ""] <- c(colnames(Theta)[apply(Theta, 1, function(x) all(x==0))], ov.iv)
-               rownames(Lambda_full)[rownames(Lambda_full) == ""] <- ov.iv
+                                                        ncol = sum(apply(Theta, 1, function(x) all(x==0))) + length(ov.self)))
+               colnames(Lambda_full)[colnames(Lambda_full) == ""] <- c(colnames(Theta)[apply(Theta, 1, function(x) all(x==0))], ov.self)
+               rownames(Lambda_full)[rownames(Lambda_full) == ""] <- ov.self
           }else{
                Lambda_full <- matrix(0, nrow = length(ov), ncol = length(ov))
                rownames(Lambda_full) <- colnames(Lambda_full) <- ov
           }
-          # fix loading of observed ivs on itself on 1
+          # fix loading of observed ivs/dvs on itself on 1
           pos1 <- unlist(sapply(colnames(Lambda_full), function(x) which(x==rownames(Lambda_full))))
           for(i in 1:length(pos1))
           {
